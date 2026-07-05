@@ -93,6 +93,7 @@ INSTALLED_APPS = [
     "plane.license",
     "plane.api",
     "plane.authentication",
+    "plane.vj_startups",
     # Third-party things
     "rest_framework",
     "corsheaders",

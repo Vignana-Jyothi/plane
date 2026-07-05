@@ -10,7 +10,7 @@ import { LockIcon, WorkspaceIcon } from "@plane/propel/icons";
 // types
 import type { TSidebarMenuItem } from "./types";
 
-export type TCoreSidebarMenuKey = "general" | "email" | "workspace" | "authentication" | "ai" | "image";
+export type TCoreSidebarMenuKey = "general" | "email" | "workspace" | "authentication" | "ai" | "image" | "vjstartups" | "clubActivities";
 
 export const coreSidebarMenuLinks: Record<TCoreSidebarMenuKey, TSidebarMenuItem> = {
   general: {
@@ -48,5 +48,17 @@ export const coreSidebarMenuLinks: Record<TCoreSidebarMenuKey, TSidebarMenuItem>
     name: "Images in Plane",
     description: "Allow third-party image libraries.",
     href: `/image/`,
+  },
+  vjstartups: {
+    Icon: WorkspaceIcon,
+    name: "VJ Startups OS",
+    description: "Manage ecosystem health and startups.",
+    href: `/vj-startups/`,
+  },
+  clubActivities: {
+    Icon: WorkspaceIcon,
+    name: "Club Activities",
+    description: "Monitor wings and events.",
+    href: `/club-activities/`,
   },
 };
