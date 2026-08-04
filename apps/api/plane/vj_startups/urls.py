@@ -6,7 +6,8 @@ from .views import (
     PublicMemberProfileEndpoint,
     PublicStartupProfileEndpoint,
     ShowcaseStartupsEndpoint,
-    ShowcaseMetricsEndpoint
+    ShowcaseMetricsEndpoint,
+    ShowcaseMembersEndpoint
 )
 from .views.admin import (
     AdminStartupEndpoint,
@@ -18,7 +19,11 @@ from .views.admin import (
     AdminWingsMetricsEndpoint,
     AdminWingInviteEndpoint,
     AdminWingMembersEndpoint,
-    AdminWingRemoveMemberEndpoint
+    AdminWingRemoveMemberEndpoint,
+    AdminEventEndpoint,
+    AdminEventDetailEndpoint,
+    AdminClubMemberEndpoint,
+    AdminClubMemberDetailEndpoint
 )
 from .views.bot import BotProxyEndpoint
 
@@ -34,6 +39,10 @@ urlpatterns = [
     path("admin/wings/<str:slug>/members/<uuid:user_id>/", AdminWingRemoveMemberEndpoint.as_view(), name="admin-wing-remove-member"),
     path("admin/wings/<str:slug>/invite/", AdminWingInviteEndpoint.as_view(), name="admin-wing-invite"),
     path("admin/metrics/", AdminStartupsMetricsEndpoint.as_view(), name="admin-metrics"),
+    path("admin/events/", AdminEventEndpoint.as_view(), name="admin-events"),
+    path("admin/events/<uuid:pk>/", AdminEventDetailEndpoint.as_view(), name="admin-event-detail"),
+    path("admin/members/", AdminClubMemberEndpoint.as_view(), name="admin-club-members"),
+    path("admin/members/<uuid:pk>/", AdminClubMemberDetailEndpoint.as_view(), name="admin-club-member-detail"),
 
     # Discord Bot Proxy
     path("bot/proxy/", BotProxyEndpoint.as_view(), name="bot-proxy"),
@@ -50,4 +59,5 @@ urlpatterns = [
     # Showcase
     path("showcase/startups/", ShowcaseStartupsEndpoint.as_view(), name="showcase-startups"),
     path("showcase/metrics/", ShowcaseMetricsEndpoint.as_view(), name="showcase-metrics"),
+    path("showcase/members/", ShowcaseMembersEndpoint.as_view(), name="showcase-members"),
 ]

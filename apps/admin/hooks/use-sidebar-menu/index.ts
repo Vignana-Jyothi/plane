@@ -18,5 +18,6 @@ export function useSidebarMenu(): TSidebarMenuItem[] {
     coreSidebarMenuLinks.image,
     coreSidebarMenuLinks.vjstartups,
     coreSidebarMenuLinks.clubActivities,
+    coreSidebarMenuLinks.memberDirectory,
   ];
 }

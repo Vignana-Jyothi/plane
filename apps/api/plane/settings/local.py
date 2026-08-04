@@ -14,6 +14,9 @@ DEBUG = True
 INSTALLED_APPS += ("debug_toolbar",)  # noqa
 MIDDLEWARE += ("debug_toolbar.middleware.DebugToolbarMiddleware",)  # noqa
 
+# Disable CSRF middleware for local development to avoid cross-port cookie/SameSite issues
+MIDDLEWARE = [m for m in MIDDLEWARE if m != "django.middleware.csrf.CsrfViewMiddleware"]
+
 DEBUG_TOOLBAR_PATCH_SETTINGS = False
 
 # Only show emails in console don't send it to smtp

@@ -19,7 +19,7 @@ export default function ClubActivitiesDashboard() {
       header={{
         title: "Club Activities (Wings)",
         description: "Monitor events, performance, and cross-wing collaboration.",
-        action: (
+        actions: (
           <Button variant="primary" onClick={() => setIsCreateModalOpen(true)}>
             + Create Wing
           </Button>
@@ -101,7 +101,7 @@ function WingList() {
               </td>
               <td className="px-6 py-4 text-right">
                 <Button 
-                  variant="outline-primary" 
+                  variant="secondary" 
                   size="sm" 
                   onClick={(e) => {
                     e.stopPropagation();

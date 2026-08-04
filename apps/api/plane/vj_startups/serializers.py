@@ -3,6 +3,8 @@ from plane.vj_startups.models.organization import OrganizationMemberProfile, Win
 from plane.vj_startups.models.startup import Startup, StartupMember
 from plane.vj_startups.models.contribution import Opportunity, Contribution, Milestone
 from plane.vj_startups.models.reputation import Badge, MemberBadge
+from plane.vj_startups.models.event import Event
+from plane.vj_startups.models.contribution_snapshot import ContributionSnapshot
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -10,7 +12,7 @@ User = get_user_model()
 class UserSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "first_name", "last_name", "email", "avatar")
+        fields = ("id", "first_name", "last_name", "email", "avatar", "username")
 
 class WingSerializer(serializers.ModelSerializer):
     class Meta:
@@ -66,3 +68,17 @@ class OpportunitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Opportunity
         fields = "__all__"
+
+class EventSerializer(serializers.ModelSerializer):
+    wing_name = serializers.CharField(source="wing.name", read_only=True)
+    wing_color = serializers.CharField(source="wing.color", read_only=True)
+
+    class Meta:
+        model = Event
+        fields = ("id", "title", "status", "scheduled_at", "wing", "wing_name", "wing_color")
+
+class ContributionSnapshotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContributionSnapshot
+        fields = "__all__"
+

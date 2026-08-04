@@ -43,7 +43,7 @@ export default function VJStartupsDashboard() {
         onClose={() => setIsModalOpen(false)}
         onSuccess={() => {
           console.log("Startup created successfully!");
-          mutateMetrics();
+          mutate();
           globalMutate("VJ_STARTUPS_LIST");
         }}
       />
@@ -135,15 +135,15 @@ function StartupList() {
               <td className="px-6 py-4 flex gap-2">
                 {startup.status === "active" ? (
                   <>
-                    <Button variant="outline-primary" size="sm" onClick={() => openInvite(startup.slug)}>
+                    <Button variant="secondary" size="sm" onClick={() => openInvite(startup.slug)}>
                       Invite
                     </Button>
-                    <Button variant="danger" size="sm" onClick={() => handleDisable(startup.slug)}>
+                    <Button variant="error-fill" size="sm" onClick={() => handleDisable(startup.slug)}>
                       Disable
                     </Button>
                   </>
                 ) : (
-                  <Button variant="danger" size="sm" onClick={() => handleDelete(startup.slug)}>
+                  <Button variant="error-fill" size="sm" onClick={() => handleDelete(startup.slug)}>
                     Delete
                   </Button>
                 )}
@@ -177,7 +177,7 @@ function StartupList() {
                 />
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <Button variant="neutral-empty" onClick={() => setInviteModalOpen(false)}>
+                <Button variant="secondary" onClick={() => setInviteModalOpen(false)}>
                   Cancel
                 </Button>
                 <Button variant="primary" type="submit">

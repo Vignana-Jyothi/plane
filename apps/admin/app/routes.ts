@@ -24,6 +24,7 @@ export default [
     route("vj-startups", "./(all)/(dashboard)/vj-startups/page.tsx"),
     route("club-activities", "./(all)/(dashboard)/club-activities/page.tsx"),
     route("club-activities/:slug", "./(all)/(dashboard)/club-activities/[slug]/page.tsx"),
+    route("member-directory", "./(all)/(dashboard)/member-directory/page.tsx"),
   ]),
   // Catch-all route for 404 handling - must be last
   route("*", "./components/404.tsx"),

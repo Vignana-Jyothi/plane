@@ -1,9 +1,12 @@
 from rest_framework import generics, status, serializers
 from rest_framework.response import Response
 from django.utils.text import slugify
+from django.utils import timezone
+import datetime
 from plane.vj_startups.models.startup import Startup
-from plane.vj_startups.models.organization import Wing
-from plane.vj_startups.serializers import StartupSerializer
+from plane.vj_startups.models.organization import Wing, OrganizationMemberProfile
+from plane.vj_startups.models.event import Event
+from plane.vj_startups.serializers import StartupSerializer, EventSerializer, OrganizationMemberProfileSerializer
 from plane.license.api.permissions.instance import InstanceAdminPermission
 from plane.authentication.session import BaseSessionAuthentication
 
@@ -186,18 +189,26 @@ class AdminWingsMetricsEndpoint(generics.GenericAPIView):
     permission_classes = [InstanceAdminPermission]
 
     def get(self, request, *args, **kwargs):
-        # Count active wings
         active_wings = Wing.objects.count()
+        total_events = Event.objects.count()
         
-        # Zeroed out until we configure actual event tracking logic
-        total_events = 0
-        engagement_score = 0
-        
+        if active_wings > 0:
+            completed_events_last_30d = Event.objects.filter(
+                status="completed",
+                scheduled_at__gte=timezone.now() - datetime.timedelta(days=30)
+            ).count()
+            in_progress_events = Event.objects.filter(status="in_progress").count()
+            score = (completed_events_last_30d * 3 + in_progress_events * 1) / active_wings
+            engagement_score = f"{int(round(score))}%"
+        else:
+            engagement_score = "–"
+            
         return Response({
             "active_wings": active_wings,
             "total_events": total_events,
-            "engagement_score": f"{engagement_score}%"
+            "engagement_score": engagement_score
         }, status=status.HTTP_200_OK)
+
 
 class AdminStartupEndpoint(generics.ListCreateAPIView):
     queryset = Startup.objects.all().order_by('-created_at')
@@ -313,3 +324,143 @@ class AdminStartupsMetricsEndpoint(generics.GenericAPIView):
             "funding_raised": float(funding_raised),
             "total_users": total_users,
         }, status=status.HTTP_200_OK)
+
+class AdminEventEndpoint(generics.ListCreateAPIView):
+    queryset = Event.objects.all().order_by('-scheduled_at')
+    serializer_class = EventSerializer
+    authentication_classes = [BaseSessionAuthentication]
+    permission_classes = [InstanceAdminPermission]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            statuses = status_param.split(',')
+            queryset = queryset.filter(status__in=statuses)
+        return queryset
+
+class AdminEventDetailEndpoint(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    authentication_classes = [BaseSessionAuthentication]
+    permission_classes = [InstanceAdminPermission]
+
+class AdminClubMemberEndpoint(generics.ListCreateAPIView):
+    queryset = OrganizationMemberProfile.objects.all().select_related('user', 'wing').order_by('-created_at')
+    serializer_class = OrganizationMemberProfileSerializer
+    authentication_classes = [BaseSessionAuthentication]
+    permission_classes = [InstanceAdminPermission]
+
+    def create(self, request, *args, **kwargs):
+        from django.contrib.auth import get_user_model
+        from plane.vj_startups.models.organization import OrganizationMemberProfile, Wing
+        from plane.vj_startups.serializers import OrganizationMemberProfileSerializer
+        from django.db import transaction
+        from django.utils.text import slugify
+
+        User = get_user_model()
+        email = request.data.get("email", "").strip().lower()
+        first_name = request.data.get("first_name", "").strip()
+        last_name = request.data.get("last_name", "").strip()
+        role = request.data.get("role", "Member").strip()
+        wing_id = request.data.get("wing")
+        is_club_member = request.data.get("is_club_member", False)
+        
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+       # Auto-upload a photo URL if provided
+        avatar = request.data.get("avatar") or ""
+
+        with transaction.atomic():
+            username = email.split('@')[0]
+            base_username = slugify(username) or "user"
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exclude(email=email).exists():
+                username = f"{base_username}-{counter}"
+                counter += 1
+
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={
+                    "username": username,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "avatar": avatar,
+                    "is_active": True,
+                }
+            )
+            
+            if created:
+                user.set_unusable_password()
+                user.save()
+            else:
+                if first_name:
+                    user.first_name = first_name
+                if last_name:
+                    user.last_name = last_name
+                if avatar:
+                    user.avatar = avatar
+                user.save()
+
+            from plane.vj_startups.services.onboarding_service import OnboardingService
+            OnboardingService.auto_onboard_user(user)
+
+            profile, _ = OrganizationMemberProfile.objects.get_or_create(user=user)
+            profile.role = role
+            profile.is_club_member = is_club_member
+            
+            if wing_id:
+                wing = Wing.objects.filter(id=wing_id).first()
+                if wing:
+                    profile.wing = wing
+            else:
+                profile.wing = None
+
+            profile.save()
+
+        serializer = OrganizationMemberProfileSerializer(profile)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class AdminClubMemberDetailEndpoint(generics.RetrieveUpdateDestroyAPIView):
+    queryset = OrganizationMemberProfile.objects.all()
+    serializer_class = OrganizationMemberProfileSerializer
+    authentication_classes = [BaseSessionAuthentication]
+    permission_classes = [InstanceAdminPermission]
+
+    def update(self, request, *args, **kwargs):
+        profile = self.get_object()
+        data = request.data
+        
+        user_data = data.get("user")
+        if user_data and isinstance(user_data, dict):
+            user = profile.user
+            if "first_name" in user_data:
+                user.first_name = user_data["first_name"]
+            if "last_name" in user_data:
+                user.last_name = user_data["last_name"]
+            if "avatar" in user_data:
+                user.avatar = user_data["avatar"] or ""
+            user.save()
+
+        if "role" in data:
+            profile.role = data["role"]
+
+        if "is_club_member" in data:
+            profile.is_club_member = data["is_club_member"]
+
+        if "wing" in data:
+            wing_id = data["wing"]
+            if wing_id:
+                from plane.vj_startups.models.organization import Wing
+                wing = Wing.objects.filter(id=wing_id).first()
+                if wing:
+                    profile.wing = wing
+            else:
+                profile.wing = None
+
+        profile.save()
+        serializer = self.get_serializer(profile)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+

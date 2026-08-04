@@ -10,7 +10,7 @@ import { LockIcon, WorkspaceIcon } from "@plane/propel/icons";
 // types
 import type { TSidebarMenuItem } from "./types";
 
-export type TCoreSidebarMenuKey = "general" | "email" | "workspace" | "authentication" | "ai" | "image" | "vjstartups" | "clubActivities";
+export type TCoreSidebarMenuKey = "general" | "email" | "workspace" | "authentication" | "ai" | "image" | "vjstartups" | "clubActivities" | "memberDirectory";
 
 export const coreSidebarMenuLinks: Record<TCoreSidebarMenuKey, TSidebarMenuItem> = {
   general: {
@@ -60,5 +60,11 @@ export const coreSidebarMenuLinks: Record<TCoreSidebarMenuKey, TSidebarMenuItem>
     name: "Club Activities",
     description: "Monitor wings and events.",
     href: `/club-activities/`,
+  },
+  memberDirectory: {
+    Icon: WorkspaceIcon,
+    name: "Member Directory",
+    description: "Manage and showcase club members.",
+    href: `/member-directory/`,
   },
 };

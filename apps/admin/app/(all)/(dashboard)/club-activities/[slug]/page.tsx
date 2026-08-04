@@ -5,7 +5,7 @@ import { useParams, useNavigate } from "react-router";
 import useSWR from "swr";
 import { PageWrapper } from "@/components/common/page-wrapper";
 import { Button } from "@plane/propel/button";
-import { ArrowLeft, Crown } from "lucide-react";
+import { ArrowLeft, Crown, UserPlus } from "lucide-react";
 import { VJStartupsService } from "@/services/vj-startups.service";
 
 const vjStartupsService = new VJStartupsService();
@@ -15,16 +15,18 @@ export default function WingDashboard() {
   const navigate = useNavigate();
   const slug = params?.slug as string;
 
-  // We need to fetch the specific wing details and its members
+  // Fetch wing details, wing members, and the global directory members
   const { data: wings } = useSWR("VJ_WINGS_LIST", () => vjStartupsService.fetchWings());
   const { data: members, isLoading, mutate: mutateMembers } = useSWR(
     slug ? `VJ_WING_MEMBERS_${slug}` : null,
     () => vjStartupsService.fetchWingMembers(slug)
   );
+  const { data: directoryMembers } = useSWR("VJ_MEMBERS_LIST", () => vjStartupsService.fetchMembers());
 
   const [wing, setWing] = useState<any>(null);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [inviteEmails, setInviteEmails] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -43,6 +45,17 @@ export default function WingDashboard() {
       setError(err?.error || "Failed to send invites.");
     } finally {
       setInviteLoading(false);
+    }
+  };
+
+  const handleAddExistingMember = async (email: string) => {
+    if (!wing) return;
+    try {
+      await vjStartupsService.inviteToWing(wing.slug, email);
+      mutateMembers();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add member to wing.");
     }
   };
 
@@ -76,19 +89,29 @@ export default function WingDashboard() {
     return (
       <PageWrapper header={{ title: "Wing Not Found", description: "" }}>
         <div className="text-sm text-tertiary">Could not find wing with slug: {slug}</div>
-        <Button variant="outline-primary" className="mt-4" onClick={() => navigate('/club-activities')}>
+        <Button variant="secondary" className="mt-4" onClick={() => navigate('/club-activities')}>
           Back to Directory
         </Button>
       </PageWrapper>
     );
   }
 
+  // Filter global directory by search query (Name or Email)
+  const filteredDirectory = searchQuery.trim()
+    ? directoryMembers?.filter((m: any) => {
+        const name = `${m.user?.first_name || ""} ${m.user?.last_name || ""}`.toLowerCase();
+        const email = (m.user?.email || "").toLowerCase();
+        const q = searchQuery.toLowerCase();
+        return name.includes(q) || email.includes(q);
+      }) || []
+    : [];
+
   return (
     <PageWrapper
       header={{
         title: (
           <div className="flex items-center gap-3">
-            <Button variant="neutral-empty" size="sm" className="!px-2" onClick={() => navigate('/club-activities')}>
+            <Button variant="secondary" size="sm" className="!px-2" onClick={() => navigate('/club-activities')}>
               <ArrowLeft className="w-4 h-4" />
             </Button>
             {wing.color && (
@@ -98,7 +121,7 @@ export default function WingDashboard() {
           </div>
         ) as any,
         description: wing.description || "Manage this wing's members and activities.",
-        action: (
+        actions: (
           <Button variant="primary" onClick={() => setInviteModalOpen(true)}>
             + Add Members
           </Button>
@@ -149,7 +172,7 @@ export default function WingDashboard() {
                     {new Date(member.joined_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <Button variant="danger" size="sm" onClick={() => handleRemoveMember(member.id)}>
+                    <Button variant="error-fill" size="sm" onClick={() => handleRemoveMember(member.id)}>
                       Remove
                     </Button>
                   </td>
@@ -159,7 +182,7 @@ export default function WingDashboard() {
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center">
                     <p className="text-tertiary font-medium mb-1">No active members yet.</p>
-                    <p className="text-tertiary text-12">Head back to the directory to invite some!</p>
+                    <p className="text-tertiary text-12">Click + Add Members to add people from the directory.</p>
                   </td>
                 </tr>
               )}
@@ -170,32 +193,88 @@ export default function WingDashboard() {
 
       {inviteModalOpen && (
         <div className="fixed inset-0 bg-background/50 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-surface-1 border border-subtle rounded-lg w-full max-w-md p-6 shadow-custom">
-            <h3 className="text-18 font-medium text-primary mb-4">Invite Members to {wing?.name}</h3>
+          <div className="bg-surface-1 border border-subtle rounded-lg w-full max-w-md p-6 shadow-custom flex flex-col max-h-[90vh]">
+            <h3 className="text-18 font-medium text-primary mb-4">Manage Wing Members</h3>
             {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded text-sm">{error}</div>}
-            <p className="text-13 text-tertiary mb-4">
-              Enter comma-separated email addresses. If they already have an account, they will instantly be granted access to the Wing's project.
-            </p>
-            <form onSubmit={handleInviteSubmit} className="space-y-4">
+            
+            {/* Search inputs and Directory add/remove list */}
+            <div className="space-y-4 flex-1 overflow-y-auto pr-1">
               <div>
-                <label className="block text-12 font-medium text-tertiary mb-1">Emails</label>
+                <label className="block text-12 font-medium text-tertiary mb-1">Search Directory (Name or Email)</label>
                 <input
                   type="text"
                   className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
-                  placeholder="member1@example.com, member2@example.com"
-                  value={inviteEmails}
-                  onChange={(e) => setInviteEmails(e.target.value)}
+                  placeholder="Start typing a name or email to add/remove..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="neutral-empty" onClick={() => setInviteModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button variant="primary" type="submit" disabled={inviteLoading || !inviteEmails.trim()}>
-                  {inviteLoading ? "Sending..." : "Send Invites"}
-                </Button>
-              </div>
-            </form>
+
+              {searchQuery.trim() && (
+                <div className="border border-subtle rounded divide-y divide-subtle max-h-[200px] overflow-y-auto bg-surface-2">
+                  {filteredDirectory.map((m: any) => {
+                    const inWing = members?.some((wm: any) => wm.email === m.user?.email);
+                    const name = `${m.user?.first_name || ""} ${m.user?.last_name || ""}`.trim() || m.user?.username || m.user?.email || "Unknown Member";
+                    return (
+                      <div key={m.id} className="p-2.5 flex items-center justify-between hover:bg-surface-3 transition-colors text-12">
+                        <div>
+                          <div className="font-semibold text-primary">{name}</div>
+                          <div className="text-tertiary text-11">{m.user?.email}</div>
+                        </div>
+                        {inWing ? (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMember(m.user?.id)}
+                            className="px-2.5 py-1 rounded bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 text-11 font-medium transition-colors"
+                          >
+                            Remove
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleAddExistingMember(m.user?.email)}
+                            className="px-2.5 py-1 rounded bg-green-500/10 text-green-600 border border-green-500/20 hover:bg-green-500/20 text-11 font-medium transition-colors"
+                          >
+                            Add
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {filteredDirectory.length === 0 && (
+                    <div className="p-3 text-center text-tertiary text-12">
+                      No directory members match.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Standard Invite Fallback */}
+              <form onSubmit={handleInviteSubmit} className="pt-4 border-t border-subtle space-y-4">
+                <div>
+                  <label className="block text-12 font-medium text-tertiary mb-1">Invite New Emails (Comma-separated)</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                    placeholder="email1@example.com, email2@example.com"
+                    value={inviteEmails}
+                    onChange={(e) => setInviteEmails(e.target.value)}
+                  />
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button variant="secondary" onClick={() => {
+                    setInviteModalOpen(false);
+                    setSearchQuery("");
+                    setInviteEmails("");
+                  }}>
+                    Close
+                  </Button>
+                  <Button variant="primary" type="submit" disabled={inviteLoading || !inviteEmails.trim()}>
+                    {inviteLoading ? "Sending..." : "Send Invites"}
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

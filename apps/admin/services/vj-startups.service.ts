@@ -110,4 +110,71 @@ export class VJStartupsService extends APIService {
         throw err?.response?.data || err;
       });
   }
+
+  // EVENTS
+  async fetchEvents(status?: string): Promise<any> {
+    const url = status ? `/api/vj-startups/admin/events/?status=${status}` : "/api/vj-startups/admin/events/";
+    return this.get(url)
+      .then((res) => res.data)
+      .catch((err) => {
+        throw err?.response?.data || err;
+      });
+  }
+
+  async createEvent(data: any): Promise<any> {
+    return this.post("/api/vj-startups/admin/events/", data)
+      .then((res) => res.data)
+      .catch((err) => {
+        throw err?.response?.data || err;
+      });
+  }
+
+  async updateEvent(id: string, data: any): Promise<any> {
+    return this.patch(`/api/vj-startups/admin/events/${id}/`, data)
+      .then((res) => res.data)
+      .catch((err) => {
+        throw err?.response?.data || err;
+      });
+  }
+
+  async deleteEvent(id: string): Promise<any> {
+    return this.delete(`/api/vj-startups/admin/events/${id}/`)
+      .then((res) => res.data)
+      .catch((err) => {
+        throw err?.response?.data || err;
+      });
+  }
+
+  // MEMBERS
+  async fetchMembers(): Promise<any> {
+    return this.get("/api/vj-startups/admin/members/")
+      .then((res) => res.data)
+      .catch((err) => {
+        throw err?.response?.data || err;
+      });
+  }
+
+  async createMember(data: any): Promise<any> {
+    return this.post("/api/vj-startups/admin/members/", data)
+      .then((res) => res.data)
+      .catch((err) => {
+        throw err?.response?.data || err;
+      });
+  }
+
+  async updateMember(id: string, data: any): Promise<any> {
+    return this.patch(`/api/vj-startups/admin/members/${id}/`, data)
+      .then((res) => res.data)
+      .catch((err) => {
+        throw err?.response?.data || err;
+      });
+  }
+
+  async deleteMember(id: string): Promise<any> {
+    return this.delete(`/api/vj-startups/admin/members/${id}/`)
+      .then((res) => res.data)
+      .catch((err) => {
+        throw err?.response?.data || err;
+      });
+  }
 }

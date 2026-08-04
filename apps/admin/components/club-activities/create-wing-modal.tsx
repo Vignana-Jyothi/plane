@@ -78,7 +78,7 @@ export function CreateWingModal({ isOpen, onClose, onSuccess }: Props) {
           </div>
           
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="neutral-empty" onClick={onClose} disabled={loading}>
+            <Button variant="secondary" onClick={onClose} disabled={loading}>
               Cancel
             </Button>
             <Button variant="primary" type="submit" disabled={loading}>

@@ -114,7 +114,7 @@ export function EditWingModal({ isOpen, onClose, onSuccess, wing }: Props) {
           </div>
           
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="neutral-empty" onClick={onClose} disabled={loading}>
+            <Button variant="secondary" onClick={onClose} disabled={loading}>
               Cancel
             </Button>
             <Button variant="primary" type="submit" disabled={loading}>
@@ -137,7 +137,7 @@ export function EditWingModal({ isOpen, onClose, onSuccess, wing }: Props) {
               />
             </div>
             <div className="flex justify-end">
-              <Button variant="outline-primary" type="submit" disabled={inviteLoading || !inviteEmails.trim()}>
+              <Button variant="secondary" type="submit" disabled={inviteLoading || !inviteEmails.trim()}>
                 {inviteLoading ? "Sending..." : "Send Invites"}
               </Button>
             </div>
