@@ -18,10 +18,19 @@ This checklist guides developers on exactly which files to edit to deploy the mi
 - Map columns to render the returned card values (`wing_name`, `wing_color`, `scheduled_at`).
 
 ### [MODIFY] [routes.ts](file:///Users/manojkumarlakkala/Work/VJStartups/plane/apps/admin/app/routes.ts)
-- Registered the `member-directory` route to map the path to `./(all)/(dashboard)/member-directory/page.tsx`.
+- Registered the `member-directory` route and the subroutes `vj-startups/ideas`, `vj-startups/problems`, and `vj-startups/users`.
 
 ### [MODIFY] [sidebar config files](file:///Users/manojkumarlakkala/Work/VJStartups/plane/apps/admin/hooks/use-sidebar-menu/core.ts)
-- Appended `memberDirectory` link key, name, and description referencing `/member-directory/` path.
+- Appended `memberDirectory`, `vjIdeas`, `vjProblems`, and `vjUsers` link keys, names, and descriptions referencing the respective path locations.
+
+### [DELETE] [Standalone Admin Folder](file:///Users/manojkumarlakkala/Work/VJStartups/plane/admin)
+- Completely deleted the initial workspace root `admin` folder after successfully migrating and merging all its view components, services, and routing rules into the main Plane Admin panel.
+
+### [NEW] [Microservice Route Pages](file:///Users/manojkumarlakkala/Work/VJStartups/plane/apps/admin/app/(all)/(dashboard)/vj-startups/)
+- Implemented individual route folders:
+  - `ideas/page.tsx` -> Paginated auditing tool for submitted ecosystem ideas.
+  - `problems/page.tsx` -> Paginated auditing tool for ecosystem problems.
+  - `users/page.tsx` -> Dashboard view to toggle roles or delete website user records.
 
 ### [NEW] [MemberDirectory View](file:///Users/manojkumarlakkala/Work/VJStartups/plane/apps/admin/app/(all)/(dashboard)/member-directory/page.tsx)
 - Implemented global members directory view featuring real-time showcase toggle controls, custom roles inline inputs, and "+ Add Member" overlays.
