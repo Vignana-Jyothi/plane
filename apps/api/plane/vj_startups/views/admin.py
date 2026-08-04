@@ -247,6 +247,20 @@ class AdminStartupDetailEndpoint(generics.RetrieveUpdateDestroyAPIView):
     authentication_classes = [BaseSessionAuthentication]
     permission_classes = [InstanceAdminPermission]
 
+    def perform_update(self, serializer):
+        import os
+        import requests
+        instance = serializer.save()
+        try:
+            base_url = os.environ.get("VJ_MICROSERVICE_URL") or os.environ.get("NEXT_PUBLIC_MICROSERVICE_URL") or "http://localhost:6220"
+            token = os.environ.get("VJ_MICROSERVICE_ADMIN_TOKEN")
+            headers = {"Content-Type": "application/json"}
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+            requests.patch(f"{base_url}/admin-api/startups/{instance.id}/stage", json={"stage": instance.trl_stage}, headers=headers, timeout=2)
+        except Exception as e:
+            print("Failed to sync stage update to microservice:", e)
+
     def perform_destroy(self, instance):
         from plane.vj_startups.models.extension import VJProjectExtension
         # Find associated project and delete it first
@@ -463,4 +477,79 @@ class AdminClubMemberDetailEndpoint(generics.RetrieveUpdateDestroyAPIView):
         profile.save()
         serializer = self.get_serializer(profile)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+import os
+import requests
+from rest_framework.views import APIView
+
+class AdminMicroserviceProxyBase(APIView):
+    authentication_classes = [BaseSessionAuthentication]
+    permission_classes = [InstanceAdminPermission]
+
+    def get_microservice_url(self, path):
+        base_url = os.environ.get("VJ_MICROSERVICE_URL") or os.environ.get("NEXT_PUBLIC_MICROSERVICE_URL") or "http://localhost:6220"
+        return f"{base_url}/admin-api{path}"
+
+    def get_headers(self):
+        token = os.environ.get("VJ_MICROSERVICE_ADMIN_TOKEN")
+        headers = {
+            "Content-Type": "application/json"
+        }
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        return headers
+
+class AdminMicroserviceIdeasProxyEndpoint(AdminMicroserviceProxyBase):
+    def get(self, request):
+        page = request.query_params.get("page", 1)
+        limit = request.query_params.get("limit", 20)
+        search = request.query_params.get("search", "")
+        url = self.get_microservice_url(f"/ideas?page={page}&limit={limit}&search={search}")
+        try:
+            res = requests.get(url, headers=self.get_headers(), timeout=5)
+            return Response(res.json(), status=res.status_code)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class AdminMicroserviceProblemsProxyEndpoint(AdminMicroserviceProxyBase):
+    def get(self, request):
+        page = request.query_params.get("page", 1)
+        limit = request.query_params.get("limit", 20)
+        search = request.query_params.get("search", "")
+        url = self.get_microservice_url(f"/problems?page={page}&limit={limit}&search={search}")
+        try:
+            res = requests.get(url, headers=self.get_headers(), timeout=5)
+            return Response(res.json(), status=res.status_code)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class AdminMicroserviceUsersProxyEndpoint(AdminMicroserviceProxyBase):
+    def get(self, request):
+        page = request.query_params.get("page", 1)
+        limit = request.query_params.get("limit", 20)
+        search = request.query_params.get("search", "")
+        url = self.get_microservice_url(f"/users?page={page}&limit={limit}&search={search}")
+        try:
+            res = requests.get(url, headers=self.get_headers(), timeout=5)
+            return Response(res.json(), status=res.status_code)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class AdminMicroserviceUserDetailProxyEndpoint(AdminMicroserviceProxyBase):
+    def patch(self, request, pk):
+        url = self.get_microservice_url(f"/users/{pk}/role")
+        try:
+            res = requests.patch(url, json=request.data, headers=self.get_headers(), timeout=5)
+            return Response(res.json(), status=res.status_code)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def delete(self, request, pk):
+        url = self.get_microservice_url(f"/users/{pk}")
+        try:
+            res = requests.delete(url, headers=self.get_headers(), timeout=5)
+            return Response(res.json(), status=res.status_code)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

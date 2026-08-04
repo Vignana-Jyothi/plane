@@ -23,7 +23,11 @@ from .views.admin import (
     AdminEventEndpoint,
     AdminEventDetailEndpoint,
     AdminClubMemberEndpoint,
-    AdminClubMemberDetailEndpoint
+    AdminClubMemberDetailEndpoint,
+    AdminMicroserviceIdeasProxyEndpoint,
+    AdminMicroserviceProblemsProxyEndpoint,
+    AdminMicroserviceUsersProxyEndpoint,
+    AdminMicroserviceUserDetailProxyEndpoint
 )
 from .views.bot import BotProxyEndpoint
 
@@ -43,6 +47,12 @@ urlpatterns = [
     path("admin/events/<uuid:pk>/", AdminEventDetailEndpoint.as_view(), name="admin-event-detail"),
     path("admin/members/", AdminClubMemberEndpoint.as_view(), name="admin-club-members"),
     path("admin/members/<uuid:pk>/", AdminClubMemberDetailEndpoint.as_view(), name="admin-club-member-detail"),
+
+    # Microservice proxy routes
+    path("admin/microservice/ideas/", AdminMicroserviceIdeasProxyEndpoint.as_view(), name="admin-microservice-ideas"),
+    path("admin/microservice/problems/", AdminMicroserviceProblemsProxyEndpoint.as_view(), name="admin-microservice-problems"),
+    path("admin/microservice/users/", AdminMicroserviceUsersProxyEndpoint.as_view(), name="admin-microservice-users"),
+    path("admin/microservice/users/<str:pk>/", AdminMicroserviceUserDetailProxyEndpoint.as_view(), name="admin-microservice-user-detail"),
 
     # Discord Bot Proxy
     path("bot/proxy/", BotProxyEndpoint.as_view(), name="bot-proxy"),

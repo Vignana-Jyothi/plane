@@ -178,32 +178,10 @@ export class VJStartupsService extends APIService {
       });
   }
 
-  // MICROSERVICE ENDPOINTS (backend 2)
-  private getMicroserviceUrl(path: string): string {
-    const baseUrl = process.env.NEXT_PUBLIC_MICROSERVICE_URL || "http://localhost:6220";
-    return `${baseUrl}/admin-api${path}`;
-  }
-
-  private getMicroserviceHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json"
-    };
-    const stored = typeof window !== "undefined" ? localStorage.getItem("vj_admin_user") : null;
-    if (stored) {
-      try {
-        const user = JSON.parse(stored);
-        if (user.adminToken) {
-          headers["Authorization"] = `Bearer ${user.adminToken}`;
-        }
-      } catch {}
-    }
-    return headers;
-  }
-
+  // MICROSERVICE ENDPOINTS (Proxied via Django)
   async fetchMicroserviceUsers(page = 1, limit = 20, search = ""): Promise<any> {
-    const url = this.getMicroserviceUrl(`/users?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
-    return fetch(url, { headers: this.getMicroserviceHeaders() })
-      .then((res) => res.json())
+    return this.get(`/api/vj-startups/admin/microservice/users/?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`)
+      .then((res) => res.data)
       .catch((err) => {
         console.error("fetchMicroserviceUsers error:", err);
         return { users: [], total: 0, totalPages: 1 };
@@ -211,60 +189,26 @@ export class VJStartupsService extends APIService {
   }
 
   async updateMicroserviceUserRole(id: string, role: string): Promise<any> {
-    const url = this.getMicroserviceUrl(`/users/${id}/role`);
-    return fetch(url, {
-      method: "PATCH",
-      headers: this.getMicroserviceHeaders(),
-      body: JSON.stringify({ role })
-    })
-      .then((res) => res.json())
+    return this.patch(`/api/vj-startups/admin/microservice/users/${id}/`, { role })
+      .then((res) => res.data)
       .catch((err) => {
         console.error("updateMicroserviceUserRole error:", err);
-        throw err;
+        throw err?.response?.data || err;
       });
   }
 
   async deleteMicroserviceUser(id: string): Promise<any> {
-    const url = this.getMicroserviceUrl(`/users/${id}`);
-    return fetch(url, {
-      method: "DELETE",
-      headers: this.getMicroserviceHeaders()
-    })
-      .then((res) => res.json())
+    return this.delete(`/api/vj-startups/admin/microservice/users/${id}/`)
+      .then((res) => res.data)
       .catch((err) => {
         console.error("deleteMicroserviceUser error:", err);
-        throw err;
-      });
-  }
-
-  async fetchMicroserviceStartups(page = 1, limit = 20, search = ""): Promise<any> {
-    const url = this.getMicroserviceUrl(`/startups?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
-    return fetch(url, { headers: this.getMicroserviceHeaders() })
-      .then((res) => res.json())
-      .catch((err) => {
-        console.error("fetchMicroserviceStartups error:", err);
-        return { startups: [], total: 0, totalPages: 1 };
-      });
-  }
-
-  async updateMicroserviceStartupStage(id: string, stage: number): Promise<any> {
-    const url = this.getMicroserviceUrl(`/startups/${id}/stage`);
-    return fetch(url, {
-      method: "PATCH",
-      headers: this.getMicroserviceHeaders(),
-      body: JSON.stringify({ stage })
-    })
-      .then((res) => res.json())
-      .catch((err) => {
-        console.error("updateMicroserviceStartupStage error:", err);
-        throw err;
+        throw err?.response?.data || err;
       });
   }
 
   async fetchMicroserviceIdeas(page = 1, limit = 20, search = ""): Promise<any> {
-    const url = this.getMicroserviceUrl(`/ideas?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
-    return fetch(url, { headers: this.getMicroserviceHeaders() })
-      .then((res) => res.json())
+    return this.get(`/api/vj-startups/admin/microservice/ideas/?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`)
+      .then((res) => res.data)
       .catch((err) => {
         console.error("fetchMicroserviceIdeas error:", err);
         return { ideas: [], total: 0, totalPages: 1 };
@@ -272,9 +216,8 @@ export class VJStartupsService extends APIService {
   }
 
   async fetchMicroserviceProblems(page = 1, limit = 20, search = ""): Promise<any> {
-    const url = this.getMicroserviceUrl(`/problems?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
-    return fetch(url, { headers: this.getMicroserviceHeaders() })
-      .then((res) => res.json())
+    return this.get(`/api/vj-startups/admin/microservice/problems/?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`)
+      .then((res) => res.data)
       .catch((err) => {
         console.error("fetchMicroserviceProblems error:", err);
         return { problems: [], total: 0, totalPages: 1 };
