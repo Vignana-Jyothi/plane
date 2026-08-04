@@ -88,34 +88,34 @@ The following front-end routes are declared in `apps/admin/app/routes.ts` for re
 
 ---
 
-## 3. Plane Admin Panel (apps/admin) Call Route: VJ Startups Service (backend 2)
-The admin panel calls these endpoints directly to audit ideas, problems, and student accounts. The default microservice port is `6220`.
+## 3. Plane Admin Panel (apps/admin) Call Route: VJ Startups Service (backend 2) via Django Proxy
+The admin panel calls Django API proxy endpoints to fetch and manage microservice data. Django authorizes the request using Plane session cookies and then forwards the call to `backend 2` using the server's configured `VJ_MICROSERVICE_ADMIN_TOKEN` token.
 
-#### `GET http://localhost:6220/admin-api/ideas?page=<page>&limit=<limit>&search=<query>`
+#### `GET /api/vj-startups/admin/microservice/ideas/?page=<page>&limit=<limit>&search=<query>`
 - **Purpose**: Paginated audit list of student-submitted ideas.
-- **Headers**: `Authorization: Bearer <adminToken>`
+- **Headers**: Session Cookie (`SessionId`)
 - **Response**: Array of idea documents.
 
-#### `GET http://localhost:6220/admin-api/problems?page=<page>&limit=<limit>&search=<query>`
+#### `GET /api/vj-startups/admin/microservice/problems/?page=<page>&limit=<limit>&search=<query>`
 - **Purpose**: Paginated audit list of student-submitted problems.
-- **Headers**: `Authorization: Bearer <adminToken>`
+- **Headers**: Session Cookie (`SessionId`)
 
-#### `PATCH http://localhost:6220/admin-api/startups/:id/stage`
-- **Purpose**: Promote/demote startup validation stage (levels 1-9).
-- **Payload**: `{ "stage": 5 }`
+#### `PATCH /api/vj-startups/admin/startups/:slug/`
+- **Purpose**: Updates the startup details and its TRL validation stage. Django automatically syncs the validation stage level (1-9) to the Express microservice via `PATCH /admin-api/startups/:id/stage`.
+- **Payload**: `{ "trl_stage": 5 }`
 
-#### `GET http://localhost:6220/admin-api/users?page=<page>&limit=<limit>&search=<query>`
+#### `GET /api/vj-startups/admin/microservice/users/?page=<page>&limit=<limit>&search=<query>`
 - **Purpose**: Paginated list of registered main website users.
-- **Headers**: `Authorization: Bearer <adminToken>`
+- **Headers**: Session Cookie (`SessionId`)
 
-#### `PATCH http://localhost:6220/admin-api/users/:id/role`
+#### `PATCH /api/vj-startups/admin/microservice/users/:id/`
 - **Purpose**: Toggle user role between `user` and `admin`.
-- **Headers**: `Authorization: Bearer <adminToken>`
+- **Headers**: Session Cookie (`SessionId`)
 - **Payload**: `{ "role": "admin" | "user" }`
 
-#### `DELETE http://localhost:6220/admin-api/users/:id`
+#### `DELETE /api/vj-startups/admin/microservice/users/:id/`
 - **Purpose**: Delete a user account from the microservice database.
-- **Headers**: `Authorization: Bearer <adminToken>`
+- **Headers**: Session Cookie (`SessionId`)
 
 ---
 

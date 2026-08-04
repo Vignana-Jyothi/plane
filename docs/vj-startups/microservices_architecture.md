@@ -15,13 +15,13 @@ This document describes the design of the VJ Startups ecosystem, treating the co
                           ▼               ▼
 ┌───────────────────────────┐   ┌───────────────────────────┐
 │     Plane Core Service    │   │   VJ Startups Service     │
-│   (plane.vjstartup.com)   │   │     (backend 2)           │
+│   (plane.vjstartup.com)   │◄──┤     (backend 2)           │
 │   Django / PostgreSQL     │   │  Express / Mongo/Postgres │
-└─────────────▲─────────────┘   └─────────────▲─────────────┘
-              │                               │
-              │                               │ Admin tasks
-              │   ┌───────────────────────┐   │ (manage ideas/problems)
-              └───┤  Plane Admin Panel    ├───┘
+└─────────────▲─────────────┘   └───────────────────────────┘
+              │                       ▲
+              │                       │ Django Proxy Forward
+              │   ┌───────────────────┴───┐
+              └───┤  Plane Admin Panel    │
                   │  (admin.vjstartup.com)│
                   └───────────────────────┘
 ```
@@ -32,7 +32,7 @@ This document describes the design of the VJ Startups ecosystem, treating the co
 - **Task Management**: Organizes boards, issues, status pipelines, cycles, and labels.
 - **Organization Structure**: Manages `Wings` and workspace roles.
 - **Contributions Engine**: Syncs and aggregates user issues into the `ContributionSnapshot` table to power public profile heatmap graphs.
-- **Auth Provider**: Authenticates team members accessing workspaces.
+- **Auth Provider & Gateway**: Authenticates team members accessing workspaces and acts as a secure reverse-proxy for `backend 2` admin operations.
 
 ### 2. VJ Startups Service (Backend 2 — Express + Database)
 - **Ecosystem Ideas**: Manages `Ideas` submitted by students.
@@ -49,5 +49,5 @@ Because the systems run on independent backends, they correlate entities via uni
 
 ## Authentication & Authorization Architecture
 
-- **admin.vjstartup.com**: Logs in via Plane session cookies. To access `backend 2` APIs, the admin frontend passes the admin's email or an `adminToken` in the authorization header.
+- **admin.vjstartup.com**: Logs in using native Plane session cookies. To perform administrative operations on the Express microservice (e.g. view ideas or manage website roles), the admin frontend calls Django's proxy endpoints (`/api/vj-startups/admin/microservice/...`). The Django server validates the admin session and forwards the request to `backend 2` using the server-side environment token `VJ_MICROSERVICE_ADMIN_TOKEN`.
 - **vjstartup.com**: Logs in via Firebase Google OAuth. The client frontend verifies the login, extracts the email, and sends the user's email in request bodies or headers to verify permission.

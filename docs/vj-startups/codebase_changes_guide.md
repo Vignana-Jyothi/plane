@@ -61,9 +61,11 @@ This checklist guides developers on exactly which files to edit to deploy the mi
 - Added `AdminClubMemberEndpoint` (`ListCreateAPIView`) to create and list profiles.
 - Added `AdminClubMemberDetailEndpoint` (`RetrieveUpdateDestroyAPIView`) supporting customized role fields and deletion.
 - Implemented avatar empty string default normalization (`avatar = avatar or ""` / `user.avatar = user.avatar or ""`) to avoid database null constraint violations.
+- Overrode `perform_update` on `AdminStartupDetailEndpoint` to automatically dispatch TRL stage changes to the Express microservice.
+- Added proxy views: `AdminMicroserviceIdeasProxyEndpoint`, `AdminMicroserviceProblemsProxyEndpoint`, `AdminMicroserviceUsersProxyEndpoint`, and `AdminMicroserviceUserDetailProxyEndpoint` to securely bridge and authorize access to `backend 2` data.
 
 ### [MODIFY] [views/showcase.py](file:///Users/manojkumarlakkala/Work/VJStartups/plane/apps/api/plane/vj_startups/views/showcase.py)
 - Added `ShowcaseMembersEndpoint` to output showcased profiles.
 
 ### [MODIFY] [urls.py](file:///Users/manojkumarlakkala/Work/VJStartups/plane/apps/api/plane/vj_startups/urls.py)
-- Registered `/admin/members/`, `/admin/members/<pk>/`, and `/showcase/members/` route paths.
+- Registered `/admin/members/`, `/admin/members/<pk>/`, `/showcase/members/`, and the microservice proxy routes under `/admin/microservice/` path prefix.
