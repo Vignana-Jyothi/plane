@@ -46,6 +46,7 @@ class OrganizationMemberProfile(BaseModel):
     )
     member_stage = models.CharField(max_length=50, default="explorer")
     is_club_member = models.BooleanField(default=False)
+    role = models.CharField(max_length=255, default="Member")
     execution_score = models.FloatField(default=0.0)
     impact_score = models.FloatField(default=0.0)
     leadership_score = models.FloatField(default=0.0)

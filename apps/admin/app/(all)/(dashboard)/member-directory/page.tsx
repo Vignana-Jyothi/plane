@@ -247,6 +247,7 @@ export default function MemberDirectory() {
                       type="text"
                       className="bg-transparent border-b border-transparent hover:border-subtle focus:border-primary px-1 py-0.5 rounded outline-none w-full max-w-[200px]"
                       defaultValue={member.role}
+                      key={`${member.id}-${member.role}`}
                       onBlur={(e) => handleInlineRoleBlur(member, e.target.value)}
                     />
                   </td>
@@ -337,7 +338,7 @@ export default function MemberDirectory() {
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
-                    placeholder="Manoj"
+                    placeholder="First Name"
                     value={newFirstName}
                     onChange={(e) => setNewFirstName(e.target.value)}
                   />
@@ -347,7 +348,7 @@ export default function MemberDirectory() {
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
-                    placeholder="Kumar"
+                    placeholder="Last Name"
                     value={newLastName}
                     onChange={(e) => setNewLastName(e.target.value)}
                   />
