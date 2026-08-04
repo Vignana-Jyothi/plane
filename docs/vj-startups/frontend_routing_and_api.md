@@ -89,20 +89,33 @@ The following front-end routes are declared in `apps/admin/app/routes.ts` for re
 ---
 
 ## 3. Plane Admin Panel (apps/admin) Call Route: VJ Startups Service (backend 2)
-The admin panel calls these endpoints directly to audit ideas, problems, and feedback questionnaires.
+The admin panel calls these endpoints directly to audit ideas, problems, and student accounts. The default microservice port is `6220`.
 
-#### `GET http://localhost:5001/admin-api/ideas`
-- **Purpose**: Audit student ideas list.
+#### `GET http://localhost:6220/admin-api/ideas?page=<page>&limit=<limit>&search=<query>`
+- **Purpose**: Paginated audit list of student-submitted ideas.
 - **Headers**: `Authorization: Bearer <adminToken>`
 - **Response**: Array of idea documents.
 
-#### `GET http://localhost:5001/admin-api/problems`
-- **Purpose**: Audit problems directory.
+#### `GET http://localhost:6220/admin-api/problems?page=<page>&limit=<limit>&search=<query>`
+- **Purpose**: Paginated audit list of student-submitted problems.
 - **Headers**: `Authorization: Bearer <adminToken>`
 
-#### `PATCH http://localhost:5001/admin-api/startups/:id/stage`
+#### `PATCH http://localhost:6220/admin-api/startups/:id/stage`
 - **Purpose**: Promote/demote startup validation stage (levels 1-9).
 - **Payload**: `{ "stage": 5 }`
+
+#### `GET http://localhost:6220/admin-api/users?page=<page>&limit=<limit>&search=<query>`
+- **Purpose**: Paginated list of registered main website users.
+- **Headers**: `Authorization: Bearer <adminToken>`
+
+#### `PATCH http://localhost:6220/admin-api/users/:id/role`
+- **Purpose**: Toggle user role between `user` and `admin`.
+- **Headers**: `Authorization: Bearer <adminToken>`
+- **Payload**: `{ "role": "admin" | "user" }`
+
+#### `DELETE http://localhost:6220/admin-api/users/:id`
+- **Purpose**: Delete a user account from the microservice database.
+- **Headers**: `Authorization: Bearer <adminToken>`
 
 ---
 
@@ -133,18 +146,18 @@ The public portal interacts directly with the `backend 2` microservice for submi
 
 ### Call Route: VJ Startups Service (backend 2)
 
-#### `POST http://localhost:5001/problem-api/problem`
+#### `POST http://localhost:6220/problem-api/problem`
 - **Purpose**: Add new problem statement.
 - **Payload**: Form data (title, briefparagraph, background, tags, scalability, addedByName, addedByEmail).
 
-#### `POST http://localhost:5001/problem-api/problem/:id/upvote`
+#### `POST http://localhost:6220/problem-api/problem/:id/upvote`
 - **Purpose**: Toggle upvote.
 - **Payload**: `{ "email": "user@example.com" }`
 
-#### `POST http://localhost:5001/idea-api/idea`
+#### `POST http://localhost:6220/idea-api/idea`
 - **Purpose**: Submit startup concept.
 - **Payload**: Form data (title, description, contact, addedByEmail, team, links).
 
-#### `POST http://localhost:5001/questionnaire-api/response`
+#### `POST http://localhost:6220/questionnaire-api/response`
 - **Purpose**: Submit stage-evaluation questionnaire responses.
 - **Payload**: Answers payload, triggers automatic TRL level evaluation.
