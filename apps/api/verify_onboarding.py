@@ -29,17 +29,17 @@ if not created:
     user = User.objects.create(email="founder@alpha.com", username="founder_alpha")
 
 print("Validating Workspace and Project memberships...")
-general_ws = Workspace.objects.filter(slug="general").first()
+general_ws = Workspace.objects.filter(slug="vj-startups").first()
 if general_ws:
-    print("✅ General workspace created successfully.")
+    print("✅ General workspace (vj-startups) created successfully.")
 else:
-    print("❌ General workspace missing.")
+    print("❌ General workspace (vj-startups) missing.")
 
-common_proj = Project.objects.filter(name="Club Common").first()
+common_proj = Project.objects.filter(name="General").first()
 if common_proj:
-    print("✅ Club Common project created successfully.")
+    print("✅ General common project created successfully.")
 else:
-    print("❌ Club Common project missing.")
+    print("❌ General common project missing.")
 
 # Check if user is in Common project
 common_member = ProjectMember.objects.filter(member=user, project=common_proj).exists()

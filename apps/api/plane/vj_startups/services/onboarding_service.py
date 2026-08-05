@@ -242,6 +242,19 @@ class OnboardingService:
         profile, _ = OrganizationMemberProfile.objects.get_or_create(
             user=user
         )
+
+        # 3.1 Update Plane's native Profile onboarding state to skip wizard
+        from plane.db.models import Profile
+        plane_profile, _ = Profile.objects.get_or_create(user=user)
+        plane_profile.is_onboarded = True
+        plane_profile.onboarding_step = {
+            "profile_complete": True,
+            "workspace_join": True,
+            "workspace_create": True,
+            "workspace_invite": True
+        }
+        plane_profile.last_workspace_id = workspace.id
+        plane_profile.save()
         
         # 4. Check invited emails for Startups
         if not user.email:
