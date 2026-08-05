@@ -14,6 +14,7 @@ This guide documents the available commands in the root [Makefile](file:///Users
 | `make restart` | Restarts local Docker services. | Troubleshooting |
 | `make build` | Builds all packages and Next.js/React Router applications. | Production Build |
 | `make clean` | Wipes output directories and `node_modules`. | Reset / Clean |
+| `make seed` | Seeds the databases inside running API container. | Database Seeding |
 | `make check` | Runs linters, formatters, and TypeScript compilers. | Verification |
 | `make fix` | Automatically fixes code style and linter violations. | Auto Formatting |
 | `make test-api` | Runs Django backend integration tests inside test containers. | Backend Testing |
@@ -95,7 +96,19 @@ This guide documents the available commands in the root [Makefile](file:///Users
   make clean
   ```
 
-### 7. `make check`
+### 7. `make seed`
+- **Underlying Command**: 
+  ```bash
+  docker compose -f docker-compose-local.yml exec api python manage.py seed_vj_startups
+  ```
+- **Use Case**: 
+  Seeds the postgres databases inside the running API docker container with wings, badges, default admin/founder/member user accounts, workspace configurations, and default events.
+- **Example**:
+  ```bash
+  make seed
+  ```
+
+### 8. `make check`
 - **Underlying Command**: 
   ```bash
   pnpm check

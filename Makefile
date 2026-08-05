@@ -1,4 +1,4 @@
-.PHONY: help setup start build stop restart check fix clean test-api test-api-teardown
+.PHONY: help setup start build stop restart check fix clean test-api test-api-teardown seed
 
 # Default target: display help information
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "  make restart             - Restart the backend containers"
 	@echo "  make build               - Build all packages and applications"
 	@echo "  make clean               - Remove build files and node_modules"
+	@echo "  make seed                - Seed the databases inside running API container"
 	@echo ""
 	@echo "Quality & Linting:"
 	@echo "  make check               - Run typescript, formatting, and linting checks"
@@ -54,3 +55,6 @@ test-api:
 
 test-api-teardown:
 	docker compose -f docker-compose-test.yml down -v
+
+seed:
+	docker compose -f docker-compose-local.yml exec api python manage.py seed_vj_startups
