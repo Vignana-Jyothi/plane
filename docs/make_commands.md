@@ -155,3 +155,27 @@ This guide documents the available commands in the root [Makefile](file:///Users
   ```bash
   make test-api-teardown
   ```
+
+---
+
+## Windows Running Guide
+
+Since default Windows Command Prompt (`cmd.exe`) and PowerShell do not support `make` out-of-the-box, developers can run the database seeding command via the following options:
+
+### Option A: Direct Docker Compose (PowerShell / CMD)
+If your docker development environment is running, execute this command directly in your shell:
+```powershell
+docker compose -f docker-compose-local.yml exec api python manage.py seed_vj_startups
+```
+
+### Option B: Using Git Bash or WSL (Windows Subsystem for Linux)
+If you are developing inside Git Bash or a WSL terminal, the `make` utility is available. You can run the standard shorthand:
+```bash
+make seed
+```
+
+### Option C: Direct Python Execution (Local environment)
+If you are running the django API natively on your host machine (outside Docker) with active virtual environments, navigate to `apps/api/` and run:
+```powershell
+python manage.py seed_vj_startups
+```
