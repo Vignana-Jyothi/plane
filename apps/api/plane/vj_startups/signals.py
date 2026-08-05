@@ -31,7 +31,8 @@ def setup_startup_project(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def setup_user_workspace(sender, instance, created, **kwargs):
     if created and not instance.is_bot:
-        OnboardingService.auto_onboard_user(instance)
+        if OnboardingService.should_auto_onboard(instance):
+            OnboardingService.auto_onboard_user(instance)
 
 @receiver(post_save, sender=Issue)
 def create_milestone_on_issue_completion(sender, instance, created, **kwargs):

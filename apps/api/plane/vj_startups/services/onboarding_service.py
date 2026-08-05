@@ -294,3 +294,30 @@ class OnboardingService:
                 profile.wing = wing
                 profile.save(update_fields=['wing'])
             cls.onboard_user_to_wing(user, wing, role=15)
+
+    @classmethod
+    def should_auto_onboard(cls, user: User) -> bool:
+        """Determines if a newly registered user should be auto-onboarded to the global VJ Startups workspace."""
+        if not user.email:
+            return False
+
+        # 1. Superusers and staff are always auto-onboarded
+        if user.is_superuser or user.is_staff:
+            return True
+
+        email_lower = user.email.lower()
+        
+        # 2. Institutional domain check (e.g. @vnrvjiet.in)
+        if email_lower.endswith("@vnrvjiet.in"):
+            return True
+
+        # 3. Check if explicitly invited to any Startup
+        if Startup.objects.filter(invited_emails__contains=[user.email]).exists():
+            return True
+
+        # 4. Check if explicitly invited to any Wing
+        from plane.vj_startups.models.organization import Wing
+        if Wing.objects.filter(invited_emails__contains=[user.email]).exists():
+            return True
+
+        return False
