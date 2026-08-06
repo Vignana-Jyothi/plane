@@ -6,19 +6,19 @@ This guide documents the available commands in the root [Makefile](file:///Users
 
 ## Command Overview
 
-| Command | Action | Scope |
-| :--- | :--- | :--- |
-| `make setup` | Runs configuration init scripts and installs dependencies. | Initial Setup |
-| `make start` | Launches development containers and starts local web/admin servers. | Local Run |
-| `make stop` | Stops and downs local development containers. | Cleanup / Stop |
-| `make restart` | Restarts local Docker services. | Troubleshooting |
-| `make build` | Builds all packages and Next.js/React Router applications. | Production Build |
-| `make clean` | Wipes output directories and `node_modules`. | Reset / Clean |
-| `make seed` | Seeds the databases inside running API container. | Database Seeding |
-| `make check` | Runs linters, formatters, and TypeScript compilers. | Verification |
-| `make fix` | Automatically fixes code style and linter violations. | Auto Formatting |
-| `make test-api` | Runs Django backend integration tests inside test containers. | Backend Testing |
-| `make test-api-teardown` | Wipes backend test containers and volumes. | Test Cleanup |
+| Unix Command (`make`) | Cross-Platform (`pnpm`) | Action | Scope |
+| :--- | :--- | :--- | :--- |
+| `make setup` | `pnpm run setup` | Runs configuration init scripts and installs dependencies. | Initial Setup |
+| `make start` | `pnpm run start` | Launches development containers and starts local web/admin servers. | Local Run |
+| `make stop` | `pnpm run docker:stop` | Stops and downs local development containers. | Cleanup / Stop |
+| `make restart` | `pnpm run docker:restart` | Restarts local Docker services. | Troubleshooting |
+| `make build` | `pnpm run build` | Builds all packages and Next.js/React Router applications. | Production Build |
+| `make clean` | `pnpm run clean` | Wipes output directories and build caches. | Reset / Clean |
+| `make seed` | `pnpm run seed` | Seeds the databases inside running API container. | Database Seeding |
+| `make check` | `pnpm run check` | Runs linters, formatters, and TypeScript compilers. | Verification |
+| `make fix` | `pnpm run fix` | Automatically fixes code style and linter violations. | Auto Formatting |
+| `make test-api` | `pnpm run test-api` | Runs Django backend integration tests inside test containers. | Backend Testing |
+| `make test-api-teardown` | `pnpm run test-api-teardown` | Wipes backend test containers and volumes. | Test Cleanup |
 
 ---
 
@@ -160,22 +160,40 @@ This guide documents the available commands in the root [Makefile](file:///Users
 
 ## Windows Running Guide
 
-Since default Windows Command Prompt (`cmd.exe`) and PowerShell do not support `make` out-of-the-box, developers can run the database seeding command via the following options:
+Since default Windows Command Prompt (`cmd.exe`) and PowerShell do not support `make` out-of-the-box, the repository includes a suite of native cross-platform **`pnpm` scripts** inside `package.json`. These are the recommended commands for Windows:
 
-### Option A: Direct Docker Compose (PowerShell / CMD)
-If your docker development environment is running, execute this command directly in your shell:
+### 1. Initial Setup
+Run the cross-platform setup script to create `.env` files, generate a secret key, and install dependencies:
 ```powershell
-docker compose -f docker-compose-local.yml exec api python manage.py seed_vj_startups
+pnpm run setup
 ```
 
-### Option B: Using Git Bash or WSL (Windows Subsystem for Linux)
-If you are developing inside Git Bash or a WSL terminal, the `make` utility is available. You can run the standard shorthand:
-```bash
-make seed
+### 2. Start Development Environment
+Launches Docker containers in the background and starts the local Web and Admin servers:
+```powershell
+pnpm run start
 ```
 
-### Option C: Direct Python Execution (Local environment)
-If you are running the django API natively on your host machine (outside Docker) with active virtual environments, navigate to `apps/api/` and run:
+### 3. Seed Database
+Runs the VJ Startups database seeding script inside the running API container:
 ```powershell
-python manage.py seed_vj_startups
+pnpm run seed
+```
+
+### 4. Stop Docker Services
+Stops all background Docker dev containers:
+```powershell
+pnpm run docker:stop
+```
+
+### 5. Restart Docker Services
+```powershell
+pnpm run docker:restart
+```
+
+### 6. Running Tests
+Run the Django backend test suite or tear it down:
+```powershell
+pnpm run test-api
+pnpm run test-api-teardown
 ```
