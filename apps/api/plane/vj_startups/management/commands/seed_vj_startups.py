@@ -59,11 +59,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Badges seeded successfully."))
 
         # 3. Provision Global Workspace & General Project
-        workspace = OnboardingService.get_or_create_global_workspace()
-        OnboardingService.get_or_create_common_project(workspace)
-        self.stdout.write(self.style.SUCCESS("Global Workspace and Projects initialized."))
-
-        # 4. Seed Users and Workspace Membership
+        # 3. Seed Users definition
         users_to_seed = [
             {
                 "email": "admin@vnrvjiet.in",
@@ -152,6 +148,25 @@ class Command(BaseCommand):
             }
         ]
 
+        # 4. Create Owner User first to resolve foreign key constraints
+        admin_data = users_to_seed[0]
+        admin_user, _ = User.objects.get_or_create(email=admin_data["email"])
+        admin_user.username = admin_data["username"]
+        admin_user.first_name = admin_data["first_name"]
+        admin_user.last_name = admin_data["last_name"]
+        admin_user.is_staff = admin_data["is_staff"]
+        admin_user.is_superuser = admin_data["is_superuser"]
+        admin_user.is_active = True
+        admin_user.is_password_autoset = False
+        admin_user.set_password("vjstartups123")
+        admin_user.save()
+
+        # 5. Provision Global Workspace & General Project
+        workspace = OnboardingService.get_or_create_global_workspace()
+        OnboardingService.get_or_create_common_project(workspace)
+        self.stdout.write(self.style.SUCCESS("Global Workspace and Projects initialized."))
+
+        # 6. Seed All Users and Workspace Memberships
         for user_data in users_to_seed:
             user, created = User.objects.get_or_create(email=user_data["email"])
             user.username = user_data["username"]
