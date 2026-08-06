@@ -153,19 +153,16 @@ class Command(BaseCommand):
         ]
 
         for user_data in users_to_seed:
-            user, created = User.objects.get_or_create(
-                email=user_data["email"],
-                defaults={
-                    "username": user_data["username"],
-                    "first_name": user_data["first_name"],
-                    "last_name": user_data["last_name"],
-                    "is_staff": user_data["is_staff"],
-                    "is_superuser": user_data["is_superuser"]
-                }
-            )
-            if created:
-                user.set_password("vjstartups123")
-                user.save()
+            user, created = User.objects.get_or_create(email=user_data["email"])
+            user.username = user_data["username"]
+            user.first_name = user_data["first_name"]
+            user.last_name = user_data["last_name"]
+            user.is_staff = user_data["is_staff"]
+            user.is_superuser = user_data["is_superuser"]
+            user.is_active = True
+            user.is_password_autoset = False
+            user.set_password("vjstartups123")
+            user.save()
 
             # Add to Workspace
             WorkspaceMember.objects.get_or_create(
