@@ -21,10 +21,11 @@ jobs:
 
       - name: Setup Environment Variables
         run: |
-          # Make the setup script executable and run it to generate .env files
-          chmod +x ./setup.sh
-          ./setup.sh
-          
+          # Manually copy .env files and generate SECRET_KEY to avoid pnpm/corepack permission errors
+          cp .env.example .env
+          cp apps/api/.env.example apps/api/.env
+          SECRET_KEY=$(tr -dc 'a-z0-9' < /dev/urandom | head -c50)
+          echo "SECRET_KEY=\"\$SECRET_KEY\"" >> apps/api/.env
       - name: Expose Database Port (Override)
         run: |
           # Create an override file to expose port 5432 without modifying the main docker-compose.yml
