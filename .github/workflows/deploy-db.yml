@@ -33,7 +33,7 @@ jobs:
           services:
             plane-db:
               ports:
-                - "5433:5432"
+                - "5434:5432"
           EOF
           
       - name: Start Database Container
