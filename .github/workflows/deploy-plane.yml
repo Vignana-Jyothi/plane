@@ -1,0 +1,71 @@
+name: Deploy Plane Full Stack to dev-ai
+
+on:
+  workflow_dispatch: 
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'apps/**'
+      - 'docker-compose.yml'
+
+jobs:
+  deploy-plane:
+    name: Deploy Plane Frontend and Backend
+    runs-on: [self-hosted, dev-ai]
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Environment Variables
+        run: |
+          # Copy .env.example files manually to avoid pnpm errors
+          cp .env.example .env
+          cp apps/web/.env.example apps/web/.env
+          cp apps/api/.env.example apps/api/.env
+          cp apps/space/.env.example apps/space/.env
+          cp apps/admin/.env.example apps/admin/.env
+          cp apps/live/.env.example apps/live/.env
+          
+          # Generate SECRET_KEY
+          SECRET_KEY=$(tr -dc 'a-z0-9' < /dev/urandom | head -c50)
+          echo "SECRET_KEY=\"\$SECRET_KEY\"" >> apps/api/.env
+          
+          # Replace 'localhost' with the server's IP address so the UI can connect to the API properly
+          sed -i 's/localhost/10.100.0.15/g' apps/web/.env
+          sed -i 's/localhost/10.100.0.15/g' apps/admin/.env
+          sed -i 's/localhost/10.100.0.15/g' apps/space/.env
+          sed -i 's/localhost/10.100.0.15/g' apps/live/.env
+          
+          # Expose the Plane Proxy on port 8888 (since port 80 is heavily used)
+          sed -i 's/LISTEN_HTTP_PORT=80/LISTEN_HTTP_PORT=8888/g' .env
+
+      - name: Expose Database Port (Override)
+        run: |
+          # Keep port 5434 exposed for the other vjstartup application
+          cat <<EOF > docker-compose.override.yml
+          services:
+            plane-db:
+              ports:
+                - "5434:5432"
+          EOF
+          
+      - name: Start Full Plane Stack
+        run: |
+          # The --build flag ensures the frontend and backend images are compiled locally on the server
+          docker compose up -d --build
+          
+      - name: Wait for Stack Initialization
+        run: |
+          echo "Waiting for PostgreSQL and API to accept connections..."
+          sleep 15
+          
+      - name: Run Django Migrations
+        run: |
+          docker compose run --rm api python manage.py migrate
+          
+      - name: Seed VJ Startups Data
+        run: |
+          docker compose run --rm api python manage.py seed_vj_startups
