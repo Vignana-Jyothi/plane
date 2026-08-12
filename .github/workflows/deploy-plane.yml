@@ -29,15 +29,37 @@ jobs:
           cp apps/admin/.env.example apps/admin/.env
           cp apps/live/.env.example apps/live/.env
           
-          # Generate SECRET_KEY
-          SECRET_KEY=$(tr -dc 'a-z0-9' < /dev/urandom | head -c50)
+          # Replace default URLs with the correct production domain and paths
+          DOMAIN="https://vjos.vjstartup.com"
+          
+          # Fix Web ENV
+          cat <<EOF > apps/web/.env
+          VITE_API_BASE_URL="\$DOMAIN/api"
+          VITE_WEB_BASE_URL="\$DOMAIN"
+          VITE_ADMIN_BASE_URL="\$DOMAIN/god-mode"
+          VITE_SPACE_BASE_URL="\$DOMAIN/spaces"
+          VITE_LIVE_BASE_URL="\$DOMAIN/live"
+          VITE_ENABLE_VJ_STARTUPS=1
+          EOF
+          
+          # Fix Admin ENV
+          cp apps/web/.env apps/admin/.env
+          # Fix Space ENV
+          cp apps/web/.env apps/space/.env
+          # Fix Live ENV
+          cp apps/web/.env apps/live/.env
+          
+          # Generate robust SECRET_KEY avoiding 'tr' pipe errors
+          SECRET_KEY=\$(openssl rand -hex 32)
           echo "SECRET_KEY=\"\$SECRET_KEY\"" >> apps/api/.env
           
-          # Replace 'localhost' with the server's Domain so the UI can connect to the API properly
-          sed -i 's/localhost/vjos.vjstartup.com/g' apps/web/.env
-          sed -i 's/localhost/vjos.vjstartup.com/g' apps/admin/.env
-          sed -i 's/localhost/vjos.vjstartup.com/g' apps/space/.env
-          sed -i 's/localhost/vjos.vjstartup.com/g' apps/live/.env
+          # Fix API ENV for CORS and URLs
+          sed -i "s|CORS_ALLOWED_ORIGINS=.*|CORS_ALLOWED_ORIGINS=\"\$DOMAIN\"|g" apps/api/.env
+          sed -i "s|WEB_URL=.*|WEB_URL=\"\$DOMAIN\"|g" apps/api/.env
+          sed -i "s|APP_BASE_URL=.*|APP_BASE_URL=\"\$DOMAIN\"|g" apps/api/.env
+          sed -i "s|ADMIN_BASE_URL=.*|ADMIN_BASE_URL=\"\$DOMAIN/god-mode\"|g" apps/api/.env
+          sed -i "s|SPACE_BASE_URL=.*|SPACE_BASE_URL=\"\$DOMAIN/spaces\"|g" apps/api/.env
+          sed -i "s|LIVE_BASE_URL=.*|LIVE_BASE_URL=\"\$DOMAIN/live\"|g" apps/api/.env
           
           # Expose the Plane Proxy on port 8888 (since port 80 is heavily used)
           sed -i 's/LISTEN_HTTP_PORT=80/LISTEN_HTTP_PORT=8888/g' .env
