@@ -184,19 +184,14 @@ SITE_ID = 1
 # User Model
 AUTH_USER_MODEL = "db.User"
 
-# Database
 if bool(os.environ.get("DATABASE_URL")):
     # Parse database configuration from $DATABASE_URL
-    DATABASES = {"default": dj_database_url.config()}
+    DATABASES = {"default": dj_database_url.config(conn_max_age=600, ssl_require=False)}
 else:
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("POSTGRES_DB"),
-            "USER": os.environ.get("POSTGRES_USER"),
-            "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
-            "HOST": os.environ.get("POSTGRES_HOST"),
-            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
         }
     }
 
@@ -222,7 +217,7 @@ if os.environ.get("ENABLE_READ_REPLICA", "0") == "1":
 
 
 # Redis Config
-REDIS_URL = os.environ.get("REDIS_URL")
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/")
 REDIS_SSL = REDIS_URL and "rediss" in REDIS_URL
 
 if REDIS_SSL:
@@ -310,7 +305,7 @@ AMQP_URL = os.environ.get("AMQP_URL")
 if AMQP_URL:
     CELERY_BROKER_URL = AMQP_URL
 else:
-    CELERY_BROKER_URL = f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/{RABBITMQ_VHOST}"
+    CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/{RABBITMQ_VHOST}")
 
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_SERIALIZER = "json"
