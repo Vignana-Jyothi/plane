@@ -7,6 +7,18 @@ import os
 import logging
 from datetime import timedelta
 
+# Load .env variables so Celery CLI picks them up
+env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+if os.path.exists(env_path):
+    with open(env_path) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, val = line.split("=", 1)
+                key = key.strip()
+                val = val.strip().strip('"').strip("'")
+                os.environ.setdefault(key, val)
+
 # Third party imports
 from celery import Celery
 from pythonjsonlogger.json import JsonFormatter
@@ -35,7 +47,7 @@ def _get_metrics_push_interval_minutes() -> int:
 
 METRICS_PUSH_INTERVAL_MINUTES = _get_metrics_push_interval_minutes()
 
-app = Celery("plane")
+app = Celery("plane", broker=os.getenv('CELERY_BROKER_URL', os.getenv('AMQP_URL', 'redis://localhost:6379/0')))
 
 # Using a string here means the worker will not have to
 # pickle the object when using Windows.
@@ -50,6 +62,10 @@ app.conf.beat_schedule = {
     "push-instance-metrics": {
         "task": "plane.license.bgtasks.telemetry_metrics.push_instance_metrics",
         "schedule": schedule(run_every=timedelta(minutes=METRICS_PUSH_INTERVAL_MINUTES)),
+    },
+    "sync-vj-startups-reputation": {
+        "task": "plane.vj_startups.bgtasks.reputation_task.sync_vj_reputation_task",
+        "schedule": crontab(hour=0, minute=0),  # Once every 24 hours at midnight
     },
     # Occurs once every day
     "check-every-day-to-delete-hard-delete": {
