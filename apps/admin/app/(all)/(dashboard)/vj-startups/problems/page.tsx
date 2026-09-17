@@ -61,7 +61,7 @@ export default function ProblemsAuditPage() {
               <thead className="bg-layer-1 text-tertiary border-b border-subtle">
                 <tr>
                   <th className="px-6 py-3 font-medium">Problem</th>
-                  <th className="px-6 py-3 font-medium">Submitted By</th>
+                  <th className="px-6 py-3 font-medium">Created By</th>
                   <th className="px-6 py-3 font-medium">Category</th>
                   <th className="px-6 py-3 font-medium">Upvotes</th>
                   <th className="px-6 py-3 font-medium">Created At</th>
@@ -74,10 +74,10 @@ export default function ProblemsAuditPage() {
                       <div className="font-semibold text-primary">{problem.title}</div>
                       {problem.description && <div className="text-11 text-tertiary mt-0.5 max-w-xl truncate">{problem.description}</div>}
                     </td>
-                    <td className="px-6 py-4 text-secondary">{problem.submittedBy || "—"}</td>
+                    <td className="px-6 py-4 text-secondary">{problem.addedByName || "—"}</td>
                     <td className="px-6 py-4">
                       <span className="px-2 py-0.5 rounded text-10 font-medium bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                        {problem.category || "General"}
+                        {problem.category || problem.industry || "General"}
                       </span>
                     </td>
                     <td className="px-6 py-4 font-semibold text-secondary">{problem.upvotes ?? 0}</td>
