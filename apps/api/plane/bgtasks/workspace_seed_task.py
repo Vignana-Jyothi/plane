@@ -58,7 +58,7 @@ def read_seed_file(filename):
     """
     file_path = os.path.join(settings.SEED_DIR, "data", filename)
     try:
-        with open(file_path, "r") as file:
+        with open(file_path, "r", encoding="utf-8") as file:
             return json.load(file)
     except FileNotFoundError:
         logger.error(f"Seed file {filename} not found in {settings.SEED_DIR}/data")
