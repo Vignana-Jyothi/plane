@@ -179,12 +179,26 @@ export class VJStartupsService extends APIService {
   }
 
   // MICROSERVICE ENDPOINTS (Proxied via Django)
+  // On failure (e.g. VJ_MICROSERVICE_ADMIN_TOKEN missing/invalid), these resolve to an
+  // empty-but-valid shape plus an `error` message, rather than throwing - callers should
+  // check `.error` to distinguish "genuinely empty" from "couldn't reach the service".
+  private microserviceErrorMessage(err: any): string {
+    return (
+      err?.response?.data?.error ||
+      err?.response?.data?.message ||
+      err?.message ||
+      "Failed to reach the ecosystem service"
+    );
+  }
+
   async fetchMicroserviceUsers(page = 1, limit = 20, search = ""): Promise<any> {
-    return this.get(`/api/vj-startups/admin/microservice/users/?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`)
+    return this.get(
+      `/api/vj-startups/admin/microservice/users/?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`
+    )
       .then((res) => res.data)
       .catch((err) => {
         console.error("fetchMicroserviceUsers error:", err);
-        return { users: [], total: 0, totalPages: 1 };
+        return { users: [], total: 0, totalPages: 1, error: this.microserviceErrorMessage(err) };
       });
   }
 
@@ -207,20 +221,24 @@ export class VJStartupsService extends APIService {
   }
 
   async fetchMicroserviceIdeas(page = 1, limit = 20, search = ""): Promise<any> {
-    return this.get(`/api/vj-startups/admin/microservice/ideas/?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`)
+    return this.get(
+      `/api/vj-startups/admin/microservice/ideas/?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`
+    )
       .then((res) => res.data)
       .catch((err) => {
         console.error("fetchMicroserviceIdeas error:", err);
-        return { ideas: [], total: 0, totalPages: 1 };
+        return { ideas: [], total: 0, totalPages: 1, error: this.microserviceErrorMessage(err) };
       });
   }
 
   async fetchMicroserviceProblems(page = 1, limit = 20, search = ""): Promise<any> {
-    return this.get(`/api/vj-startups/admin/microservice/problems/?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`)
+    return this.get(
+      `/api/vj-startups/admin/microservice/problems/?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`
+    )
       .then((res) => res.data)
       .catch((err) => {
         console.error("fetchMicroserviceProblems error:", err);
-        return { problems: [], total: 0, totalPages: 1 };
+        return { problems: [], total: 0, totalPages: 1, error: this.microserviceErrorMessage(err) };
       });
   }
 }
