@@ -293,4 +293,26 @@ class Command(BaseCommand):
                 )
         self.stdout.write(self.style.SUCCESS("Wing events seeded successfully."))
 
+        # Backfill: auto_provision_wing/auto_provision_startup only run on first
+        # creation (via post_save signal, created=True). Any Wing/Startup that was
+        # created before the global workspace existed - which used to always be the
+        # case here, since this command seeded Wings before the workspace - never
+        # got a project and can't self-heal on a later save(). Catch those up.
+        from plane.vj_startups.models.extension import VJProjectExtension
+
+        for wing in Wing.objects.all():
+            if not VJProjectExtension.objects.filter(wing=wing).exists():
+                OnboardingService.auto_provision_wing(wing)
+        for startup in Startup.objects.all():
+            if not VJProjectExtension.objects.filter(startup=startup).exists():
+                OnboardingService.auto_provision_startup(startup)
+        self.stdout.write(self.style.SUCCESS("Backfilled missing wing/startup projects."))
+
+        # Members whose profile was saved before their wing's project existed never
+        # got added to it (the profile save signal ran too early to find a project).
+        # Re-sync now that every wing definitely has one.
+        for profile in OrganizationMemberProfile.objects.filter(wing__isnull=False).select_related("wing", "user"):
+            OnboardingService.onboard_user_to_wing(profile.user, profile.wing)
+        self.stdout.write(self.style.SUCCESS("Backfilled wing project memberships."))
+
         self.stdout.write(self.style.SUCCESS("All VJ Startups OS data seeded successfully!"))

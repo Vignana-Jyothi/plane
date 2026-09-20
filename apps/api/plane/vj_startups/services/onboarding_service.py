@@ -86,10 +86,8 @@ class OnboardingService:
     @transaction.atomic
     def auto_provision_startup(cls, startup: Startup):
         """Called when a Startup is created."""
-        workspace = cls.get_global_workspace()
-        if not workspace:
-            return None
-        
+        workspace = cls.get_or_create_global_workspace()
+
         # Create Project
         identifier = cls._generate_project_identifier(startup.name)
         project_name = cls._generate_project_name(workspace, startup.name)
@@ -161,10 +159,8 @@ class OnboardingService:
     def auto_provision_wing(cls, wing):
         """Called when a Wing is created."""
         from plane.vj_startups.models.organization import Wing
-        workspace = cls.get_global_workspace()
-        if not workspace:
-            return None
-        
+        workspace = cls.get_or_create_global_workspace()
+
         identifier = cls._generate_project_identifier(wing.name)
         project_name = cls._generate_project_name(workspace, wing.name)
         project = Project.objects.create(
@@ -190,10 +186,8 @@ class OnboardingService:
     @transaction.atomic
     def onboard_user_to_wing(cls, user, wing, role=15):
         """Called when a user is assigned to a Wing."""
-        workspace = cls.get_global_workspace()
-        if not workspace:
-            return
-        
+        workspace = cls.get_or_create_global_workspace()
+
         # If this is the Wing Master for the Vision Wing, escalate their Workspace role
         workspace_role = 20 if role == 20 and "vision" in wing.slug.lower() else 15
         
@@ -230,9 +224,7 @@ class OnboardingService:
     @transaction.atomic
     def onboard_user_to_startup(cls, user, startup, role=15):
         """Called when an already-registered user is invited to a Startup."""
-        workspace = cls.get_global_workspace()
-        if not workspace:
-            return
+        workspace = cls.get_or_create_global_workspace()
 
         # Add to Workspace
         WorkspaceMember.objects.get_or_create(
@@ -273,10 +265,8 @@ class OnboardingService:
     @transaction.atomic
     def auto_onboard_user(cls, user: User):
         """Called when a new User is created."""
-        workspace = cls.get_global_workspace()
-        if not workspace:
-            return
-        
+        workspace = cls.get_or_create_global_workspace()
+
         # 1. Add to Workspace
         WorkspaceMember.objects.get_or_create(
             workspace=workspace,
