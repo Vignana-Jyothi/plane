@@ -26,6 +26,13 @@ class Wing(BaseModel):
         return self.name
 
 class OrganizationMemberProfile(BaseModel):
+    class PublicRole(models.TextChoices):
+        USER = "USER", "User"
+        STUDENT = "STUDENT", "Student"
+        WING_MEMBER = "WING_MEMBER", "Wing Member"
+        WING_MASTER = "WING_MASTER", "Wing Master"
+        ADMIN = "ADMIN", "Admin"
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -54,6 +61,16 @@ class OrganizationMemberProfile(BaseModel):
     reliability_score = models.FloatField(default=0.0)
     reputation_score = models.FloatField(default=0.0)
     joined_at = models.DateTimeField(auto_now_add=True)
+
+    # Merged from the vjstartups-main-website (public site) User model. This is
+    # the public site's own permission level (who can verify problems/ideas,
+    # promote others, post announcements) - a separate concept from Plane's own
+    # workspace roles/InstanceAdmin, not a replacement for them.
+    public_role = models.CharField(max_length=20, choices=PublicRole.choices, default=PublicRole.STUDENT)
+    public_admin_token = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    public_admin_token_created_at = models.DateTimeField(null=True, blank=True)
+    public_session_token = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    public_session_token_created_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Organization Member Profile"
