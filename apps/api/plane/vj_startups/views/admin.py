@@ -487,11 +487,18 @@ class AdminMicroserviceProxyBase(APIView):
     authentication_classes = [BaseSessionAuthentication]
     permission_classes = [InstanceAdminPermission]
 
+    def get_microservice_base_url(self):
+        return os.environ.get("VJ_MICROSERVICE_URL") or os.environ.get("NEXT_PUBLIC_MICROSERVICE_URL") or "http://localhost:6220"
+
     def get_microservice_url(self, path):
-        base_url = os.environ.get("VJ_MICROSERVICE_URL") or os.environ.get("NEXT_PUBLIC_MICROSERVICE_URL") or "http://localhost:6220"
-        return f"{base_url}/admin-api{path}"
+        return f"{self.get_microservice_base_url()}/admin-api{path}"
 
     def get_headers(self):
+        # VJ_MICROSERVICE_ADMIN_TOKEN is one specific ADMIN's own publicAdminToken
+        # (see .env.example) - every verify/promote action proxied through here is
+        # attributed to that account on the backend-2 side, not whichever Plane
+        # Instance Admin actually clicked the button. Same limitation the existing
+        # user-role-promotion proxy already has; not new to the verify endpoints.
         token = os.environ.get("VJ_MICROSERVICE_ADMIN_TOKEN")
         headers = {
             "Content-Type": "application/json"
@@ -549,6 +556,45 @@ class AdminMicroserviceUserDetailProxyEndpoint(AdminMicroserviceProxyBase):
         url = self.get_microservice_url(f"/users/{pk}")
         try:
             res = requests.delete(url, headers=self.get_headers(), timeout=5)
+            return Response(res.json(), status=res.status_code)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AdminMicroserviceProblemVerifyProxyEndpoint(AdminMicroserviceProxyBase):
+    """
+    Talent Wing's daily approve/reject action (Plan of Action SOP: "Talent Wing
+    logs into vjos.vjstartup.com and filters for pending triage tickets...
+    If approved, set review status to approved"). Proxies to backend-2's
+    verifierAuth-gated /problem-api/problem/:id/verify|unverify.
+    """
+    def patch(self, request, pk):
+        action = "verify" if request.data.get("verified", True) else "unverify"
+        url = f"{self.get_microservice_base_url()}/problem-api/problem/{pk}/{action}"
+        try:
+            res = requests.patch(
+                url,
+                json={"verificationNotes": request.data.get("verificationNotes", "")},
+                headers=self.get_headers(),
+                timeout=5,
+            )
+            return Response(res.json(), status=res.status_code)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AdminMicroserviceIdeaVerifyProxyEndpoint(AdminMicroserviceProxyBase):
+    """Same as AdminMicroserviceProblemVerifyProxyEndpoint, for ideas."""
+    def patch(self, request, pk):
+        action = "verify" if request.data.get("verified", True) else "unverify"
+        url = f"{self.get_microservice_base_url()}/idea-api/idea/{pk}/{action}"
+        try:
+            res = requests.patch(
+                url,
+                json={"verificationNotes": request.data.get("verificationNotes", "")},
+                headers=self.get_headers(),
+                timeout=5,
+            )
             return Response(res.json(), status=res.status_code)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -5,7 +5,7 @@ import useSWR from "swr";
 import { PageWrapper } from "@/components/common/page-wrapper";
 import { Button } from "@plane/propel/button";
 import { VJStartupsService } from "@/services/vj-startups.service";
-import { Search, ChevronLeft, ChevronRight, RefreshCw, AlertCircle } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
 
 const vjStartupsService = new VJStartupsService();
 
@@ -13,6 +13,7 @@ export default function ProblemsAuditPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
   const { data, isLoading, mutate } = useSWR(`VJ_PROBLEMS_${page}_${search}`, () =>
     vjStartupsService.fetchMicroserviceProblems(page, 20, search)
@@ -22,6 +23,19 @@ export default function ProblemsAuditPage() {
     e.preventDefault();
     setSearch(query);
     setPage(1);
+  };
+
+  const handleSetVerified = async (problemId: string, verified: boolean) => {
+    setVerifyingId(problemId);
+    try {
+      await vjStartupsService.setMicroserviceProblemVerified(problemId, verified);
+      mutate();
+    } catch (err) {
+      console.error("Failed to update verification status:", err);
+      alert("Failed to update verification status. Check the console for details.");
+    } finally {
+      setVerifyingId(null);
+    }
   };
 
   return (
@@ -71,6 +85,8 @@ export default function ProblemsAuditPage() {
                   <th className="px-6 py-3 font-medium">Category</th>
                   <th className="px-6 py-3 font-medium">Upvotes</th>
                   <th className="px-6 py-3 font-medium">Created At</th>
+                  <th className="px-6 py-3 font-medium">Status</th>
+                  <th className="px-6 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-subtle">
@@ -90,11 +106,44 @@ export default function ProblemsAuditPage() {
                     </td>
                     <td className="px-6 py-4 font-semibold text-secondary">{problem.upvotes ?? 0}</td>
                     <td className="px-6 py-4 text-tertiary">{new Date(problem.createdAt).toLocaleDateString()}</td>
+                    <td className="px-6 py-4">
+                      {problem.verified ? (
+                        <span className="border-green-500/20 bg-green-500/10 text-green-500 inline-flex items-center gap-1 rounded border px-2 py-0.5 text-10 font-medium">
+                          <CheckCircle2 className="h-3 w-3" /> Verified
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded border border-subtle bg-surface-2 px-2 py-0.5 text-10 font-medium text-tertiary">
+                          Pending
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {problem.verified ? (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={verifyingId === problem.problemId}
+                          onClick={() => handleSetVerified(problem.problemId, false)}
+                        >
+                          Unverify
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          disabled={verifyingId === problem.problemId}
+                          onClick={() => handleSetVerified(problem.problemId, true)}
+                          className="flex items-center gap-1"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                        </Button>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {data?.error ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center gap-1">
                         <AlertCircle className="text-red-500 mb-1 h-8 w-8" />
                         <p className="text-red-500 font-medium">Could not load problems from the ecosystem service.</p>
@@ -108,7 +157,7 @@ export default function ProblemsAuditPage() {
                 ) : (
                   (!data?.problems || data.problems.length === 0) && (
                     <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-tertiary">
+                      <td colSpan={7} className="px-6 py-12 text-center text-tertiary">
                         <div className="flex flex-col items-center justify-center gap-1">
                           <AlertCircle className="mb-1 h-8 w-8 text-tertiary" />
                           <p className="font-medium text-secondary">No problems found.</p>

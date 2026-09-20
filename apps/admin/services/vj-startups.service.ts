@@ -241,4 +241,22 @@ export class VJStartupsService extends APIService {
         return { problems: [], total: 0, totalPages: 1, error: this.microserviceErrorMessage(err) };
       });
   }
+
+  async setMicroserviceProblemVerified(problemId: string, verified: boolean): Promise<any> {
+    return this.patch(`/api/vj-startups/admin/microservice/problems/${problemId}/verify/`, { verified })
+      .then((res) => res.data)
+      .catch((err) => {
+        console.error("setMicroserviceProblemVerified error:", err);
+        throw err?.response?.data || err;
+      });
+  }
+
+  async setMicroserviceIdeaVerified(ideaId: string, verified: boolean): Promise<any> {
+    return this.patch(`/api/vj-startups/admin/microservice/ideas/${ideaId}/verify/`, { verified })
+      .then((res) => res.data)
+      .catch((err) => {
+        console.error("setMicroserviceIdeaVerified error:", err);
+        throw err?.response?.data || err;
+      });
+  }
 }
