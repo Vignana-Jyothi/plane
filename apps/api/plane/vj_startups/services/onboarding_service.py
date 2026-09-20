@@ -228,6 +228,49 @@ class OnboardingService:
 
     @classmethod
     @transaction.atomic
+    def onboard_user_to_startup(cls, user, startup, role=15):
+        """Called when an already-registered user is invited to a Startup."""
+        workspace = cls.get_global_workspace()
+        if not workspace:
+            return
+
+        # Add to Workspace
+        WorkspaceMember.objects.get_or_create(
+            workspace=workspace,
+            member=user,
+            defaults={"role": 15}
+        )
+
+        # Add to Common Project
+        common_project = cls.get_or_create_common_project(workspace)
+        ProjectMember.objects.get_or_create(
+            workspace=workspace,
+            project=common_project,
+            member=user,
+            defaults={"role": 15}
+        )
+
+        # Add to Startup Project
+        ext = VJProjectExtension.objects.filter(startup=startup).select_related('project').first()
+        if ext and ext.project:
+            ProjectMember.objects.get_or_create(
+                workspace=workspace,
+                project=ext.project,
+                member=user,
+                defaults={"role": role}
+            )
+
+        # Create StartupMember record
+        if user.email:
+            profile, _ = OrganizationMemberProfile.objects.get_or_create(user=user)
+            StartupMember.objects.get_or_create(
+                startup=startup,
+                member=profile,
+                defaults={"role": "Member"}
+            )
+
+    @classmethod
+    @transaction.atomic
     def auto_onboard_user(cls, user: User):
         """Called when a new User is created."""
         workspace = cls.get_global_workspace()

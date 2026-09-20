@@ -280,41 +280,41 @@ class AdminStartupInviteEndpoint(generics.GenericAPIView):
     permission_classes = [InstanceAdminPermission]
 
     def post(self, request, *args, **kwargs):
-        startup = self.get_object()
-        emails = request.data.get('emails', [])
-        if isinstance(emails, str):
-            emails = [e.strip() for e in emails.split(",") if e.strip()]
-            
-        if not emails:
-            return Response({"error": "No emails provided"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            startup = self.get_object()
+            emails = request.data.get('emails', [])
+            if isinstance(emails, str):
+                emails = [e.strip() for e in emails.split(",") if e.strip()]
 
-        # Append unique emails to startup
-        current_emails = set(startup.invited_emails or [])
-        new_emails = set(emails) - current_emails
-        
-        # Try to instantly onboard any registered users (even if previously invited)
-        from django.contrib.auth import get_user_model
-        from plane.vj_startups.services.onboarding_service import OnboardingService
-        User = get_user_model()
-        
-        registered_users = User.objects.filter(email__in=emails)
-        for user in registered_users:
-            from plane.vj_startups.models.organization import OrganizationMemberProfile
-            from plane.vj_startups.models.startup import StartupMember
-            profile, _ = OrganizationMemberProfile.objects.get_or_create(user=user)
-            StartupMember.objects.get_or_create(user=user, startup=startup, defaults={'role': 'Member'})
-            OnboardingService.onboard_user_to_startup(user, startup, role=15)
+            if not emails:
+                return Response({"error": "No emails provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not new_emails:
-            return Response({"message": f"Processed {len(emails)} emails. Users instantly onboarded."}, status=status.HTTP_200_OK)
-            
-        if startup.invited_emails is None:
-            startup.invited_emails = []
-            
-        startup.invited_emails.extend(list(new_emails))
-        startup.save(update_fields=['invited_emails'])
+            # Append unique emails to startup
+            current_emails = set(startup.invited_emails or [])
+            new_emails = set(emails) - current_emails
 
-        return Response({"message": f"Invited {len(new_emails)} member(s)."}, status=status.HTTP_200_OK)
+            # Try to instantly onboard any registered users (even if previously invited)
+            from django.contrib.auth import get_user_model
+            from plane.vj_startups.services.onboarding_service import OnboardingService
+            User = get_user_model()
+
+            registered_users = User.objects.filter(email__in=emails)
+            for user in registered_users:
+                OnboardingService.onboard_user_to_startup(user, startup, role=15)
+
+            if not new_emails:
+                return Response({"message": f"Processed {len(emails)} emails. Users instantly onboarded."}, status=status.HTTP_200_OK)
+
+            if startup.invited_emails is None:
+                startup.invited_emails = []
+
+            startup.invited_emails.extend(list(new_emails))
+            startup.save(update_fields=['invited_emails'])
+
+            return Response({"message": f"Invited {len(new_emails)} member(s)."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            import traceback
+            return Response({"error": f"Exception: {str(e)}", "trace": traceback.format_exc()}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class AdminStartupsMetricsEndpoint(generics.GenericAPIView):
     authentication_classes = [BaseSessionAuthentication]
