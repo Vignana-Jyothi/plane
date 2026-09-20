@@ -23,6 +23,7 @@ class Startup(BaseModel):
     slug = models.SlugField(max_length=255, unique=True)
     description = models.TextField(blank=True)
     logo = models.URLField(blank=True)
+    cover_image = models.URLField(blank=True)
     website = models.URLField(blank=True)
     tagline = models.CharField(max_length=255, blank=True)
     problem_statement = models.TextField(blank=True)
@@ -37,6 +38,7 @@ class Startup(BaseModel):
     team_size = models.IntegerField(default=1)
     github_url = models.URLField(blank=True)
     pitch_deck_url = models.URLField(blank=True)
+    one_pager_url = models.URLField(blank=True)
     public_visibility = models.BooleanField(default=False)
     invited_emails = models.JSONField(default=list, blank=True)
 
@@ -57,7 +59,7 @@ class Startup(BaseModel):
     competitive_advantage = models.TextField(blank=True)
     upvotes = models.IntegerField(default=0)
     views = models.IntegerField(default=0)
-    related_idea_id = models.CharField(max_length=255, null=True, blank=True)  # soft reference to backend2's Idea.ideaId - Idea stays a Prisma-only model
+    related_idea_id = models.CharField(max_length=255, null=True, blank=True, unique=True)  # soft reference to backend2's Idea.ideaId - Idea stays a Prisma-only model
 
     class Meta:
         verbose_name = "Startup"
