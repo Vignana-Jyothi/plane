@@ -50,7 +50,10 @@ class OnboardingService:
             defaults={
                 "name": cls.COMMON_PROJECT_NAME,
                 "network": 2, # Public within workspace
-                "description": "Global project for all VJ Startups members"
+                "description": "Global project for all VJ Startups members",
+                "module_view": True,
+                "cycle_view": True,
+                "issue_views_view": True,
             }
         )
         return project
@@ -96,9 +99,12 @@ class OnboardingService:
             name=project_name,
             identifier=identifier,
             description=startup.description,
-            network=0 # Secret/Private by default
+            network=0, # Secret/Private by default
+            module_view=True,
+            cycle_view=True,
+            issue_views_view=True,
         )
-        
+
         # Map Project to Startup
         VJProjectExtension.objects.create(
             project=project,
@@ -168,9 +174,12 @@ class OnboardingService:
             name=project_name,
             identifier=identifier,
             description=wing.description,
-            network=0 # Secret/Private by default
+            network=0, # Secret/Private by default
+            module_view=True,
+            cycle_view=True,
+            issue_views_view=True,
         )
-        
+
         VJProjectExtension.objects.create(
             project=project,
             wing=wing
