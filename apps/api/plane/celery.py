@@ -92,6 +92,10 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.exporter_expired_task.delete_old_s3_link",
         "schedule": crontab(hour=3, minute=45),  # UTC 03:45
     },
+    "sync-vj-startups-reputation": {
+        "task": "plane.vj_startups.bgtasks.reputation_task.sync_vj_reputation_task",
+        "schedule": crontab(hour=4, minute=0),  # UTC 04:00, once every 24 hours
+    },
 }
 
 
