@@ -30,6 +30,7 @@ from .views.admin import (
     AdminMicroserviceUserDetailProxyEndpoint
 )
 from .views.bot import BotProxyEndpoint
+from .views.public_auth import PublicSiteUpsertUserEndpoint
 
 urlpatterns = [
     # Admin
@@ -56,6 +57,9 @@ urlpatterns = [
 
     # Discord Bot Proxy
     path("bot/proxy/", BotProxyEndpoint.as_view(), name="bot-proxy"),
+
+    # Public site (vjstartups-main-website) internal auth bridge
+    path("public-auth/upsert-user/", PublicSiteUpsertUserEndpoint.as_view(), name="public-auth-upsert-user"),
 
     # Leaderboards
     path("leaderboards/members/", MemberLeaderboardEndpoint.as_view(), name="leaderboard-members"),
