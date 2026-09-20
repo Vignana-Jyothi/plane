@@ -1,5 +1,4 @@
 from django.db import models
-from django.conf import settings
 from plane.db.models import BaseModel, Issue, Project
 from .organization import OrganizationMemberProfile
 from .startup import Startup
@@ -40,25 +39,3 @@ class Milestone(BaseModel):
 
     def __str__(self):
         return f"{self.startup.name} - {self.title}"
-
-class Opportunity(BaseModel):
-    startup = models.ForeignKey(Startup, on_delete=models.CASCADE, related_name="opportunities", null=True, blank=True)
-    title = models.CharField(max_length=255)
-    type = models.CharField(max_length=50) # grant, competition, etc.
-    description = models.TextField(blank=True)
-    deadline = models.DateTimeField(null=True, blank=True)
-    external_url = models.URLField(blank=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="vj_opportunities_created"
-    )
-
-    class Meta:
-        verbose_name = "Opportunity"
-        verbose_name_plural = "Opportunities"
-        db_table = "vj_opportunities"
-
-    def __str__(self):
-        return self.title

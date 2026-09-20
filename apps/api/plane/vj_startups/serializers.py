@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from plane.vj_startups.models.organization import OrganizationMemberProfile, Wing
 from plane.vj_startups.models.startup import Startup, StartupMember
-from plane.vj_startups.models.contribution import Opportunity, Contribution, Milestone
+from plane.vj_startups.models.contribution import Contribution, Milestone
 from plane.vj_startups.models.reputation import Badge, MemberBadge
 from plane.vj_startups.models.event import Event
 from plane.vj_startups.models.contribution_snapshot import ContributionSnapshot
@@ -61,12 +61,6 @@ class OrganizationMemberProfileSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = OrganizationMemberProfile
-        fields = "__all__"
-
-class OpportunitySerializer(serializers.ModelSerializer):
-    startup = StartupSerializer(read_only=True)
-    class Meta:
-        model = Opportunity
         fields = "__all__"
 
 class EventSerializer(serializers.ModelSerializer):
