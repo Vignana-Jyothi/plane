@@ -1,8 +1,10 @@
+import os
 import string
 import random
+import requests
 from django.db import transaction
 from django.contrib.auth import get_user_model
-from plane.db.models import Workspace, WorkspaceMember, Project, ProjectMember
+from plane.db.models import Workspace, WorkspaceMember, Project, ProjectMember, Issue
 from plane.vj_startups.models.startup import Startup, StartupMember
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 from plane.vj_startups.models.extension import VJProjectExtension
@@ -110,7 +112,14 @@ class OnboardingService:
             project=project,
             startup=startup
         )
-        
+
+        # If this startup was created from a public-site Idea, seed a starting
+        # Issue from it - founders land in a project that already has their
+        # original pitch as trackable work, not an empty board. Best-effort:
+        # backend 2 being unreachable shouldn't block startup/project creation.
+        if startup.related_idea_id:
+            cls._create_seed_issue_from_idea(project, startup.related_idea_id)
+
         # Determine users to immediately onboard
         users_to_onboard = []
         if startup.created_by:
@@ -159,6 +168,47 @@ class OnboardingService:
                 )
 
         return project
+
+    @classmethod
+    def _create_seed_issue_from_idea(cls, project, idea_id):
+        """
+        Fetch the public Idea this startup came from (backend 2 owns Idea data -
+        Django has no model for it) and create one starting Issue from it. This
+        is a one-time seed, not an ongoing sync: editing the Issue afterwards
+        never writes back to the Idea, and vice versa. Best-effort - a failure
+        here must never break startup/project provisioning itself.
+        """
+        base_url = (
+            os.environ.get("VJ_MICROSERVICE_URL")
+            or os.environ.get("NEXT_PUBLIC_MICROSERVICE_URL")
+            or "http://localhost:6220"
+        )
+        try:
+            res = requests.get(f"{base_url}/idea-api/ideas/{idea_id}", timeout=3)
+            res.raise_for_status()
+            idea = res.json()
+        except Exception:
+            return
+
+        title = (idea.get("title") or f"Idea {idea_id}").strip()[:255]
+        description = (idea.get("description") or "").strip()
+        public_url = f"https://vjstartup.com/ideas/{idea_id}"
+
+        description_html = "".join(
+            [
+                f"<p>{description}</p>" if description else "",
+                f'<p>Seeded from the original idea: <a href="{public_url}">{public_url}</a></p>',
+            ]
+        )
+
+        try:
+            Issue.objects.create(
+                name=title,
+                description_html=description_html,
+                project=project,
+            )
+        except Exception:
+            pass
 
     @classmethod
     @transaction.atomic

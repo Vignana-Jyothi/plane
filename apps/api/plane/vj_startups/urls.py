@@ -31,7 +31,7 @@ from .views.admin import (
     AdminMicroserviceProblemVerifyProxyEndpoint,
     AdminMicroserviceIdeaVerifyProxyEndpoint
 )
-from .views.public_auth import PublicSiteUpsertUserEndpoint
+from .views.public_auth import PublicSiteUpsertUserEndpoint, InternalProvisionStartupEndpoint
 
 urlpatterns = [
     # Admin
@@ -60,6 +60,7 @@ urlpatterns = [
 
     # Public site (vjstartups-main-website) internal auth bridge
     path("public-auth/upsert-user/", PublicSiteUpsertUserEndpoint.as_view(), name="public-auth-upsert-user"),
+    path("internal/provision-startup/", InternalProvisionStartupEndpoint.as_view(), name="internal-provision-startup"),
 
     # Leaderboards
     path("leaderboards/members/", MemberLeaderboardEndpoint.as_view(), name="leaderboard-members"),
