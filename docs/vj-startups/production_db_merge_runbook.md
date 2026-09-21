@@ -139,13 +139,13 @@ vars on first `configure_instance` run), and backend 2's public-site login uses 
 own, separate `GOOGLE_CLIENT_ID` in its own `.env`. Do this after Step 1 completes
 (the admin panel needs the `InstanceConfiguration` table to exist).
 
-## Step 6 — Generate the microservice admin token
-
-Log into the production admin panel once as a real Instance Admin. This generates
-that admin's `publicAdminToken` in `vj_organization_member_profiles`. Copy it into
-`VJ_MICROSERVICE_ADMIN_TOKEN` in Plane's production `apps/api/.env` and restart the
-API process. Remember: this token expires 30 days after generation (see the env
-checklist) — there's no way around logging in once post-deploy to get it.
+There is no longer a Step 6. Earlier versions of this runbook had you log into
+the production admin panel once to generate a `publicAdminToken` and copy it into
+`VJ_MICROSERVICE_ADMIN_TOKEN`, with a 30-day expiry to track and rotate forever
+after. As of 2026-09-21 that's gone: the admin proxy forwards the real acting
+admin's identity, authenticated by `PUBLIC_SITE_INTERNAL_TOKEN` (which Step 1's
+env setup already required) instead of one static personal token. Nothing to do
+here beyond what the env checklist already covers.
 
 ## Rollback plan
 

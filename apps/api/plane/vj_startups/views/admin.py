@@ -494,17 +494,24 @@ class AdminMicroserviceProxyBase(APIView):
         return f"{self.get_microservice_base_url()}/admin-api{path}"
 
     def get_headers(self):
-        # VJ_MICROSERVICE_ADMIN_TOKEN is one specific ADMIN's own publicAdminToken
-        # (see .env.example) - every verify/promote action proxied through here is
-        # attributed to that account on the backend-2 side, not whichever Plane
-        # Instance Admin actually clicked the button. Same limitation the existing
-        # user-role-promotion proxy already has; not new to the verify endpoints.
-        token = os.environ.get("VJ_MICROSERVICE_ADMIN_TOKEN")
-        headers = {
-            "Content-Type": "application/json"
-        }
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
+        # Forward the real acting admin's identity, authenticated by the same
+        # shared secret the public-auth upsert bridge already requires
+        # (PUBLIC_SITE_INTERNAL_TOKEN here == PLANE_INTERNAL_TOKEN on backend
+        # 2 - see public_auth.py). BaseSessionAuthentication +
+        # InstanceAdminPermission have already confirmed self.request.user is
+        # a real, currently-logged-in Instance Admin by the time this runs.
+        # backend 2's internalProxyAuth.js validates the token and looks up
+        # this email itself - never trust a client-supplied identity without
+        # the shared secret backing it.
+        #
+        # This replaced forwarding one specific admin's own publicAdminToken,
+        # which attributed every write made through this proxy - by any
+        # admin - to whichever single account that token belonged to.
+        headers = {"Content-Type": "application/json"}
+        internal_token = os.environ.get("PUBLIC_SITE_INTERNAL_TOKEN")
+        if internal_token:
+            headers["X-Internal-Token"] = internal_token
+            headers["X-Acting-Admin-Email"] = self.request.user.email
         return headers
 
 class AdminMicroserviceIdeasProxyEndpoint(AdminMicroserviceProxyBase):
