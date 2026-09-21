@@ -31,7 +31,6 @@ from .views.admin import (
     AdminMicroserviceProblemVerifyProxyEndpoint,
     AdminMicroserviceIdeaVerifyProxyEndpoint
 )
-from .views.bot import BotProxyEndpoint
 from .views.public_auth import PublicSiteUpsertUserEndpoint
 
 urlpatterns = [
@@ -58,9 +57,6 @@ urlpatterns = [
     path("admin/microservice/users/<str:pk>/", AdminMicroserviceUserDetailProxyEndpoint.as_view(), name="admin-microservice-user-detail"),
     path("admin/microservice/problems/<str:pk>/verify/", AdminMicroserviceProblemVerifyProxyEndpoint.as_view(), name="admin-microservice-problem-verify"),
     path("admin/microservice/ideas/<str:pk>/verify/", AdminMicroserviceIdeaVerifyProxyEndpoint.as_view(), name="admin-microservice-idea-verify"),
-
-    # Discord Bot Proxy
-    path("bot/proxy/", BotProxyEndpoint.as_view(), name="bot-proxy"),
 
     # Public site (vjstartups-main-website) internal auth bridge
     path("public-auth/upsert-user/", PublicSiteUpsertUserEndpoint.as_view(), name="public-auth-upsert-user"),
