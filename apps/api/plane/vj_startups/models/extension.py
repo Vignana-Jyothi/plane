@@ -1,5 +1,4 @@
 from django.db import models
-from django.conf import settings
 from plane.db.models import BaseModel, Project, Issue, Cycle
 from plane.vj_startups.models.organization import Wing
 from .startup import Startup
@@ -18,20 +17,15 @@ class VJProjectExtension(BaseModel):
         return f"Extension for Project {self.project.name}"
 
 class VJIssueExtension(BaseModel):
+    """
+    Links a Plane Issue back to the Startup it belongs to - same OneToOneField
+    extension pattern as VJProjectExtension (see vj_startups_upgrade_guide.md),
+    used so a startup's Issues can be queried directly without joining through
+    Project. Populated by OnboardingService._create_seed_issue_from_idea when
+    an Issue is seeded from an Idea.
+    """
     issue = models.OneToOneField(Issue, on_delete=models.CASCADE, related_name="vj_extension")
     startup = models.ForeignKey(Startup, on_delete=models.SET_NULL, null=True, blank=True, related_name="issues")
-    impact_metric = models.FloatField(default=0.0)
-    evidence_url = models.URLField(blank=True)
-    reminder_frequency_hours = models.IntegerField(default=0)
-    last_reminder_sent = models.DateTimeField(null=True, blank=True)
-    review_status = models.CharField(max_length=50, default="pending") # pending, approved, rejected
-    reviewed_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="vj_reviewed_issues"
-    )
 
     class Meta:
         verbose_name = "VJ Issue Extension"
