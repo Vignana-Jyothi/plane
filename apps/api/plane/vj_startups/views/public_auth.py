@@ -201,6 +201,8 @@ class DiagnoseMicroserviceProxyEndpoint(APIView):
         )
         internal_token = os.environ.get("PUBLIC_SITE_INTERNAL_TOKEN")
         acting_email = request.query_params.get("email", "admin@vnrvjiet.in")
+        target_path = request.query_params.get("path", "/admin-api/problems?page=1&limit=1")
+        target_url = f"{base_url}{target_path}"
 
         result = {
             "config": {
@@ -214,7 +216,7 @@ class DiagnoseMicroserviceProxyEndpoint(APIView):
 
         try:
             res = requests.get(
-                f"{base_url}/admin-api/problems?page=1&limit=1",
+                target_url,
                 headers={
                     "X-Internal-Token": internal_token or "",
                     "X-Acting-Admin-Email": acting_email,
@@ -223,14 +225,14 @@ class DiagnoseMicroserviceProxyEndpoint(APIView):
                 timeout=8,
             )
             result["proxy_call"] = {
-                "url": f"{base_url}/admin-api/problems?page=1&limit=1",
+                "url": target_url,
                 "status_code": res.status_code,
                 "content_type": res.headers.get("content-type"),
-                "body_preview": res.text[:500],
+                "body_preview": res.text[:800],
             }
         except Exception as e:
             result["proxy_call"] = {
-                "url": f"{base_url}/admin-api/problems?page=1&limit=1",
+                "url": target_url,
                 "error": f"{type(e).__name__}: {str(e)}",
             }
 
