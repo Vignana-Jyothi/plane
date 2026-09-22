@@ -16,5 +16,11 @@ export function useSidebarMenu(): TSidebarMenuItem[] {
     coreSidebarMenuLinks.workspace,
     coreSidebarMenuLinks.ai,
     coreSidebarMenuLinks.image,
+    coreSidebarMenuLinks.vjstartups,
+    coreSidebarMenuLinks.vjIdeas,
+    coreSidebarMenuLinks.vjProblems,
+    coreSidebarMenuLinks.vjUsers,
+    coreSidebarMenuLinks.clubActivities,
+    coreSidebarMenuLinks.memberDirectory,
   ];
 }

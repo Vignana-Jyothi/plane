@@ -140,6 +140,20 @@ services:
       - plane-db
       - plane-redis
 
+  discord-bot:
+    build:
+      context: ./apps/discord-bot
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - dev_env
+    env_file:
+      - ./apps/discord-bot/.env
+    volumes:
+      - ./apps/discord-bot:/app
+    depends_on:
+      - api
+
 volumes:
   redisdata:
   uploads:

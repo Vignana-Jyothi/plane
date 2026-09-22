@@ -14,6 +14,9 @@ DEBUG = True
 INSTALLED_APPS += ("debug_toolbar",)  # noqa
 MIDDLEWARE += ("debug_toolbar.middleware.DebugToolbarMiddleware",)  # noqa
 
+# Disable CSRF middleware for local development to avoid cross-port cookie/SameSite issues
+MIDDLEWARE = [m for m in MIDDLEWARE if m != "django.middleware.csrf.CsrfViewMiddleware"]
+
 DEBUG_TOOLBAR_PATCH_SETTINGS = False
 
 # Only show emails in console don't send it to smtp
@@ -46,7 +49,7 @@ LOGGING = {
             "style": "{",
         },
         "json": {
-            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "()": "pythonjsonlogger.json.JsonFormatter",
             "fmt": "%(levelname)s %(asctime)s %(module)s %(name)s %(message)s",
         },
     },
@@ -71,11 +74,6 @@ LOGGING = {
             "propagate": False,
         },
         "plane.external": {
-            "level": "INFO",
-            "handlers": ["console"],
-            "propagate": False,
-        },
-        "plane.mongo": {
             "level": "INFO",
             "handlers": ["console"],
             "propagate": False,

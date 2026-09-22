@@ -103,6 +103,8 @@ services:
       dockerfile: ./apps/live/Dockerfile.live
       args:
         DOCKER_BUILDKIT: 1
+    env_file:
+      - ./apps/live/.env
     restart: always
 
   plane-db:

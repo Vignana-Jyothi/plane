@@ -12,7 +12,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.head_ref }}
+          # For a fork PR, `ref: github.head_ref` alone checks out a branch of
+          # that name from THIS repo (github.repository defaults to the base
+          # repo on pull_request events) - if the fork's branch happens to
+          # share a name with a real branch here (e.g. both have "preview"),
+          # this silently checks out the wrong repo's commits entirely rather
+          # than the PR's actual content. Pin both the fork repo and the exact
+          # head SHA so this always reads the real PR.
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Setup Node.js

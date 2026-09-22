@@ -21,6 +21,13 @@ export default [
     route("authentication/gitea", "./(all)/(dashboard)/authentication/gitea/page.tsx"),
     route("ai", "./(all)/(dashboard)/ai/page.tsx"),
     route("image", "./(all)/(dashboard)/image/page.tsx"),
+    route("vj-startups", "./(all)/(dashboard)/vj-startups/page.tsx"),
+    route("vj-startups/ideas", "./(all)/(dashboard)/vj-startups/ideas/page.tsx"),
+    route("vj-startups/problems", "./(all)/(dashboard)/vj-startups/problems/page.tsx"),
+    route("vj-startups/users", "./(all)/(dashboard)/vj-startups/users/page.tsx"),
+    route("club-activities", "./(all)/(dashboard)/club-activities/page.tsx"),
+    route("club-activities/:slug", "./(all)/(dashboard)/club-activities/[slug]/page.tsx"),
+    route("member-directory", "./(all)/(dashboard)/member-directory/page.tsx"),
   ]),
   // Catch-all route for 404 handling - must be last
   route("*", "./components/404.tsx"),

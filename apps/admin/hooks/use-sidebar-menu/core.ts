@@ -4,13 +4,25 @@
  * See the LICENSE file for details.
  */
 
-import { Image, BrainCog, Cog, Mail } from "lucide-react";
+import { Image, BrainCog, Cog, Mail, Lightbulb, AlertCircle, Users } from "lucide-react";
 // plane imports
 import { LockIcon, WorkspaceIcon } from "@plane/propel/icons";
 // types
 import type { TSidebarMenuItem } from "./types";
 
-export type TCoreSidebarMenuKey = "general" | "email" | "workspace" | "authentication" | "ai" | "image";
+export type TCoreSidebarMenuKey = 
+  | "general" 
+  | "email" 
+  | "workspace" 
+  | "authentication" 
+  | "ai" 
+  | "image" 
+  | "vjstartups" 
+  | "vjIdeas" 
+  | "vjProblems" 
+  | "vjUsers" 
+  | "clubActivities" 
+  | "memberDirectory";
 
 export const coreSidebarMenuLinks: Record<TCoreSidebarMenuKey, TSidebarMenuItem> = {
   general: {
@@ -48,5 +60,41 @@ export const coreSidebarMenuLinks: Record<TCoreSidebarMenuKey, TSidebarMenuItem>
     name: "Images in Plane",
     description: "Allow third-party image libraries.",
     href: `/image/`,
+  },
+  vjstartups: {
+    Icon: WorkspaceIcon,
+    name: "VJ Startups OS",
+    description: "Manage ecosystem health and startups.",
+    href: `/vj-startups/`,
+  },
+  vjIdeas: {
+    Icon: Lightbulb,
+    name: "Ecosystem Ideas",
+    description: "Audit student concept submissions.",
+    href: `/vj-startups/ideas/`,
+  },
+  vjProblems: {
+    Icon: AlertCircle,
+    name: "Ecosystem Problems",
+    description: "Audit submitted problem statements.",
+    href: `/vj-startups/problems/`,
+  },
+  vjUsers: {
+    Icon: Users,
+    name: "Ecosystem Users",
+    description: "Manage external platform user roles.",
+    href: `/vj-startups/users/`,
+  },
+  clubActivities: {
+    Icon: WorkspaceIcon,
+    name: "Club Activities",
+    description: "Monitor wings and events.",
+    href: `/club-activities/`,
+  },
+  memberDirectory: {
+    Icon: WorkspaceIcon,
+    name: "Member Directory",
+    description: "Manage and showcase club members.",
+    href: `/member-directory/`,
   },
 };
