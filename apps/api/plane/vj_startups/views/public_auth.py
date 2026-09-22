@@ -7,6 +7,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+import requests
+
 from plane.db.models import User
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 from plane.vj_startups.models.extension import VJProjectExtension
@@ -172,3 +174,64 @@ class InternalProvisionStartupEndpoint(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class DiagnoseMicroserviceProxyEndpoint(APIView):
+    """
+    TEMPORARY - for diagnosing the admin proxy's persistent 401 in production
+    without needing server shell access. Reports this container's actual
+    runtime config (never the token value itself) and makes the real proxied
+    call to backend 2, returning its raw status/body. Protected by the same
+    shared secret as the other internal endpoints - remove once the 401 is
+    resolved and confirmed fixed.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        expected_token = os.environ.get("PUBLIC_SITE_INTERNAL_TOKEN")
+        provided_token = request.headers.get("X-Internal-Token")
+        if not expected_token or provided_token != expected_token:
+            return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        base_url = (
+            os.environ.get("VJ_MICROSERVICE_URL")
+            or os.environ.get("NEXT_PUBLIC_MICROSERVICE_URL")
+            or "http://localhost:6220"
+        )
+        internal_token = os.environ.get("PUBLIC_SITE_INTERNAL_TOKEN")
+        acting_email = request.query_params.get("email", "admin@vnrvjiet.in")
+
+        result = {
+            "config": {
+                "VJ_MICROSERVICE_URL_env": os.environ.get("VJ_MICROSERVICE_URL"),
+                "NEXT_PUBLIC_MICROSERVICE_URL_env": os.environ.get("NEXT_PUBLIC_MICROSERVICE_URL"),
+                "resolved_base_url": base_url,
+                "PUBLIC_SITE_INTERNAL_TOKEN_set": bool(internal_token),
+                "PUBLIC_SITE_INTERNAL_TOKEN_length": len(internal_token) if internal_token else 0,
+            }
+        }
+
+        try:
+            res = requests.get(
+                f"{base_url}/admin-api/problems?page=1&limit=1",
+                headers={
+                    "X-Internal-Token": internal_token or "",
+                    "X-Acting-Admin-Email": acting_email,
+                    "Content-Type": "application/json",
+                },
+                timeout=8,
+            )
+            result["proxy_call"] = {
+                "url": f"{base_url}/admin-api/problems?page=1&limit=1",
+                "status_code": res.status_code,
+                "content_type": res.headers.get("content-type"),
+                "body_preview": res.text[:500],
+            }
+        except Exception as e:
+            result["proxy_call"] = {
+                "url": f"{base_url}/admin-api/problems?page=1&limit=1",
+                "error": f"{type(e).__name__}: {str(e)}",
+            }
+
+        return Response(result, status=status.HTTP_200_OK)
