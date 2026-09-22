@@ -9,6 +9,7 @@ from plane.vj_startups.models.event import Event
 from plane.vj_startups.serializers import StartupSerializer, EventSerializer, OrganizationMemberProfileSerializer
 from plane.license.api.permissions.instance import InstanceAdminPermission
 from plane.authentication.session import BaseSessionAuthentication
+from plane.utils.exception_logger import log_exception
 
 class WingSerializer(serializers.ModelSerializer):
     class Meta:
@@ -114,8 +115,8 @@ class AdminWingInviteEndpoint(generics.GenericAPIView):
 
             return Response({"message": f"Invited {len(new_emails)} member(s)."}, status=status.HTTP_200_OK)
         except Exception as e:
-            import traceback
-            return Response({"error": f"Exception: {str(e)}", "trace": traceback.format_exc()}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            log_exception(e)
+            return Response({"error": "Failed to invite members"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class AdminWingMembersEndpoint(generics.GenericAPIView):
     queryset = Wing.objects.all()
@@ -313,8 +314,8 @@ class AdminStartupInviteEndpoint(generics.GenericAPIView):
 
             return Response({"message": f"Invited {len(new_emails)} member(s)."}, status=status.HTTP_200_OK)
         except Exception as e:
-            import traceback
-            return Response({"error": f"Exception: {str(e)}", "trace": traceback.format_exc()}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            log_exception(e)
+            return Response({"error": "Failed to invite members"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class AdminStartupsMetricsEndpoint(generics.GenericAPIView):
     authentication_classes = [BaseSessionAuthentication]
@@ -524,7 +525,8 @@ class AdminMicroserviceIdeasProxyEndpoint(AdminMicroserviceProxyBase):
             res = requests.get(url, headers=self.get_headers(), timeout=5)
             return Response(res.json(), status=res.status_code)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            log_exception(e)
+            return Response({"error": "Failed to reach the microservice"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class AdminMicroserviceProblemsProxyEndpoint(AdminMicroserviceProxyBase):
     def get(self, request):
@@ -536,7 +538,8 @@ class AdminMicroserviceProblemsProxyEndpoint(AdminMicroserviceProxyBase):
             res = requests.get(url, headers=self.get_headers(), timeout=5)
             return Response(res.json(), status=res.status_code)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            log_exception(e)
+            return Response({"error": "Failed to reach the microservice"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class AdminMicroserviceUsersProxyEndpoint(AdminMicroserviceProxyBase):
     def get(self, request):
@@ -548,7 +551,8 @@ class AdminMicroserviceUsersProxyEndpoint(AdminMicroserviceProxyBase):
             res = requests.get(url, headers=self.get_headers(), timeout=5)
             return Response(res.json(), status=res.status_code)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            log_exception(e)
+            return Response({"error": "Failed to reach the microservice"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class AdminMicroserviceUserDetailProxyEndpoint(AdminMicroserviceProxyBase):
     def patch(self, request, pk):
@@ -557,7 +561,8 @@ class AdminMicroserviceUserDetailProxyEndpoint(AdminMicroserviceProxyBase):
             res = requests.patch(url, json=request.data, headers=self.get_headers(), timeout=5)
             return Response(res.json(), status=res.status_code)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            log_exception(e)
+            return Response({"error": "Failed to reach the microservice"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def delete(self, request, pk):
         url = self.get_microservice_url(f"/users/{pk}")
@@ -565,7 +570,8 @@ class AdminMicroserviceUserDetailProxyEndpoint(AdminMicroserviceProxyBase):
             res = requests.delete(url, headers=self.get_headers(), timeout=5)
             return Response(res.json(), status=res.status_code)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            log_exception(e)
+            return Response({"error": "Failed to reach the microservice"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class AdminMicroserviceProblemVerifyProxyEndpoint(AdminMicroserviceProxyBase):
@@ -587,7 +593,8 @@ class AdminMicroserviceProblemVerifyProxyEndpoint(AdminMicroserviceProxyBase):
             )
             return Response(res.json(), status=res.status_code)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            log_exception(e)
+            return Response({"error": "Failed to reach the microservice"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class AdminMicroserviceIdeaVerifyProxyEndpoint(AdminMicroserviceProxyBase):
@@ -604,5 +611,6 @@ class AdminMicroserviceIdeaVerifyProxyEndpoint(AdminMicroserviceProxyBase):
             )
             return Response(res.json(), status=res.status_code)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            log_exception(e)
+            return Response({"error": "Failed to reach the microservice"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
