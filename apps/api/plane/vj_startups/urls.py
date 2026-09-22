@@ -31,7 +31,7 @@ from .views.admin import (
     AdminMicroserviceProblemVerifyProxyEndpoint,
     AdminMicroserviceIdeaVerifyProxyEndpoint
 )
-from .views.public_auth import PublicSiteUpsertUserEndpoint, InternalProvisionStartupEndpoint, DiagnoseMicroserviceProxyEndpoint
+from .views.public_auth import PublicSiteUpsertUserEndpoint, InternalProvisionStartupEndpoint, DiagnoseMicroserviceProxyEndpoint, DiagnoseStorageEndpoint
 
 urlpatterns = [
     # Admin
@@ -62,6 +62,7 @@ urlpatterns = [
     path("public-auth/upsert-user/", PublicSiteUpsertUserEndpoint.as_view(), name="public-auth-upsert-user"),
     path("internal/provision-startup/", InternalProvisionStartupEndpoint.as_view(), name="internal-provision-startup"),
     path("internal/diagnose-proxy/", DiagnoseMicroserviceProxyEndpoint.as_view(), name="internal-diagnose-proxy"),
+    path("internal/diagnose-storage/", DiagnoseStorageEndpoint.as_view(), name="internal-diagnose-storage"),
 
     # Leaderboards
     path("leaderboards/members/", MemberLeaderboardEndpoint.as_view(), name="leaderboard-members"),
