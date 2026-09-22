@@ -201,7 +201,14 @@ class DiagnoseMicroserviceProxyEndpoint(APIView):
         )
         internal_token = os.environ.get("PUBLIC_SITE_INTERNAL_TOKEN")
         acting_email = request.query_params.get("email", "admin@vnrvjiet.in")
-        target_path = request.query_params.get("path", "/admin-api/problems?page=1&limit=1")
+        # Fixed allowlist, not a free-form path - this is an authenticated
+        # endpoint that makes the server issue outbound requests, so the
+        # target must never be attacker-influenced (SSRF).
+        ALLOWED_PATHS = {
+            "problems": "/admin-api/problems?page=1&limit=1",
+            "echo": "/debug-echo-headers",
+        }
+        target_path = ALLOWED_PATHS.get(request.query_params.get("target", "problems"), ALLOWED_PATHS["problems"])
         target_url = f"{base_url}{target_path}"
 
         result = {
@@ -294,10 +301,11 @@ class DiagnoseStorageEndpoint(APIView):
 
         # Step 2: generate a real presigned POST, exactly like asset/v2.py does -
         # a mock request with the real public host, so the URL comes out the
-        # same way it would for an actual browser upload.
-        public_host = request.query_params.get("host", "vjos.vjstartup.com")
+        # same way it would for an actual browser upload. Fixed, not
+        # attacker-influenced - this determines where the server sends a
+        # signed outbound request next (SSRF risk if made user-controlled).
         factory = RequestFactory()
-        fake_request = factory.get("/", SERVER_NAME=public_host, secure=True)
+        fake_request = factory.get("/", SERVER_NAME="vjos.vjstartup.com", secure=True)
 
         try:
             storage = S3Storage(request=fake_request)
