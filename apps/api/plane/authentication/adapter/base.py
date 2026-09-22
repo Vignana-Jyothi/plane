@@ -78,7 +78,10 @@ class Adapter:
         try:
             validate_email(email)
         except ValidationError:
-            self.logger.warning(f"Email is not valid: {email}")
+            # Don't log the raw email - it's user-supplied PII, and the
+            # exception payload below already carries it for anyone who
+            # actually needs to see the value (e.g. in an error report).
+            self.logger.warning("Email failed validation")
             raise AuthenticationException(
                 error_code=AUTHENTICATION_ERROR_CODES["INVALID_EMAIL"],
                 error_message="INVALID_EMAIL",
