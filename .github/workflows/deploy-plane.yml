@@ -46,8 +46,23 @@ jobs:
           cp apps/web/.env apps/admin/.env
           # Fix Space ENV
           cp apps/web/.env apps/space/.env
-          # Fix Live ENV
-          cp apps/web/.env apps/live/.env
+
+          # Fix Live ENV - this service's .env has a completely different
+          # variable shape (API_BASE_URL, REDIS_HOST, etc, not the VITE_*
+          # names web/admin/space use), so copying apps/web/.env here like
+          # the others was silently wrong from the start: apps/live ended up
+          # with only unused VITE_ variables, never a real API_BASE_URL or
+          # REDIS_HOST. Found by Pavani - re-applying her fix here after it
+          # was lost in an earlier merge (my later PRs kept rewriting this
+          # whole file from my own branch history without first pulling her
+          # direct pushes to master, so her fix to this exact block got
+          # silently overwritten each time).
+          cp apps/live/.env.example apps/live/.env
+          sed -i "s|API_BASE_URL=.*|API_BASE_URL=\"${DOMAIN}/api\"|g" apps/live/.env
+          sed -i "s|WEB_BASE_URL=.*|WEB_BASE_URL=\"${DOMAIN}\"|g" apps/live/.env
+          sed -i "s|LIVE_BASE_URL=.*|LIVE_BASE_URL=\"${DOMAIN}\"|g" apps/live/.env
+          sed -i "s|REDIS_HOST=.*|REDIS_HOST=plane-redis|g" apps/live/.env
+          sed -i "s|REDIS_URL=.*|REDIS_URL=\"redis://plane-redis:6379/\"|g" apps/live/.env
 
           # SECRET_KEY must be STABLE across deploys - it's used to sign user
           # sessions and to encrypt InstanceConfiguration values (e.g. the
@@ -72,6 +87,13 @@ jobs:
           echo "VJ_MICROSERVICE_URL=\"${VJ_MICROSERVICE_URL:-https://vjstartup.com}\"" >> apps/api/.env
           echo "PUBLIC_SITE_INTERNAL_TOKEN=\"${PUBLIC_SITE_INTERNAL_TOKEN}\"" >> apps/api/.env
           echo "LIVE_SERVER_SECRET_KEY=\"${LIVE_SERVER_SECRET_KEY}\"" >> apps/api/.env
+          # apps/live also needs this same value to authenticate with the
+          # api service - apps/live/.env was only just created fresh from
+          # its own .env.example above (still holding that file's literal
+          # "secret-key" placeholder), so without this line the two services
+          # would have mismatched secrets and real-time collaboration would
+          # silently fail to authenticate.
+          sed -i "s|LIVE_SERVER_SECRET_KEY=.*|LIVE_SERVER_SECRET_KEY=\"${LIVE_SERVER_SECRET_KEY}\"|g" apps/live/.env
           if [ -z "${PUBLIC_SITE_INTERNAL_TOKEN}" ]; then
             echo "::warning::PUBLIC_SITE_INTERNAL_TOKEN secret is not set - the admin proxy to backend 2 (Problems/Ideas verify, user management) will not work. It must exactly match PLANE_INTERNAL_TOKEN in backend 2's own deploy secrets."
           fi
