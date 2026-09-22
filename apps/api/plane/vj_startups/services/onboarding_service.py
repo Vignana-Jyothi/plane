@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from plane.db.models import Workspace, WorkspaceMember, Project, ProjectMember, Issue
 from plane.vj_startups.models.startup import Startup, StartupMember
 from plane.vj_startups.models.organization import OrganizationMemberProfile
-from plane.vj_startups.models.extension import VJProjectExtension
+from plane.vj_startups.models.extension import VJProjectExtension, VJIssueExtension
 
 User = get_user_model()
 
@@ -118,7 +118,7 @@ class OnboardingService:
         # original pitch as trackable work, not an empty board. Best-effort:
         # backend 2 being unreachable shouldn't block startup/project creation.
         if startup.related_idea_id:
-            cls._create_seed_issue_from_idea(project, startup.related_idea_id)
+            cls._create_seed_issue_from_idea(project, startup, startup.related_idea_id)
 
         # Determine users to immediately onboard
         users_to_onboard = []
@@ -170,7 +170,7 @@ class OnboardingService:
         return project
 
     @classmethod
-    def _create_seed_issue_from_idea(cls, project, idea_id):
+    def _create_seed_issue_from_idea(cls, project, startup, idea_id):
         """
         Fetch the public Idea this startup came from (backend 2 owns Idea data -
         Django has no model for it) and create one starting Issue from it. This
@@ -202,11 +202,12 @@ class OnboardingService:
         )
 
         try:
-            Issue.objects.create(
+            issue = Issue.objects.create(
                 name=title,
                 description_html=description_html,
                 project=project,
             )
+            VJIssueExtension.objects.create(issue=issue, startup=startup)
         except Exception:
             pass
 
