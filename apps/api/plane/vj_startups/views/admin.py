@@ -445,6 +445,30 @@ class AdminClubMemberDetailEndpoint(generics.RetrieveUpdateDestroyAPIView):
     authentication_classes = [BaseSessionAuthentication]
     permission_classes = [InstanceAdminPermission]
 
+    def perform_destroy(self, instance):
+        # Deleting the member-directory entry alone never touched
+        # WorkspaceMember/ProjectMember (separate models, no Django relation
+        # between them - the soft-delete cascade on OrganizationMemberProfile
+        # can't reach them), so "removing" someone here left their real
+        # workspace/project access completely intact. Deactivate it properly
+        # first, same pattern Plane's own workspace member removal uses
+        # (app/views/workspace/member.py) - is_active=False, not a hard
+        # delete, so re-inviting them later doesn't need to recreate history.
+        from plane.db.models import WorkspaceMember, ProjectMember
+        from plane.vj_startups.services.onboarding_service import OnboardingService
+
+        workspace_member = WorkspaceMember.objects.filter(
+            workspace__slug=OnboardingService.WORKSPACE_SLUG, member=instance.user, is_active=True
+        ).first()
+        if workspace_member:
+            ProjectMember.objects.filter(
+                workspace__slug=OnboardingService.WORKSPACE_SLUG, member=instance.user, is_active=True
+            ).update(is_active=False, updated_at=timezone.now())
+            workspace_member.is_active = False
+            workspace_member.save(update_fields=["is_active"])
+
+        instance.delete()
+
     def update(self, request, *args, **kwargs):
         profile = self.get_object()
         data = request.data
