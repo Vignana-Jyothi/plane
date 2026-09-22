@@ -48,11 +48,44 @@ jobs:
           cp apps/web/.env apps/space/.env
           # Fix Live ENV
           cp apps/web/.env apps/live/.env
-          
-          # Generate robust SECRET_KEY avoiding 'tr' pipe errors
-          SECRET_KEY=$(openssl rand -hex 32)
+
+          # SECRET_KEY must be STABLE across deploys - it's used to sign user
+          # sessions and to encrypt InstanceConfiguration values (e.g. the
+          # Google OAuth client secret, see encrypt_data() in
+          # plane/license/utils/encryption.py). Regenerating it on every
+          # deploy silently logs every user out and permanently un-decrypts
+          # anything already encrypted with the old key. Set a real
+          # DJANGO_SECRET_KEY repo/environment secret once; this is only a
+          # first-run fallback so the workflow doesn't hard-fail before that
+          # secret exists.
+          if [ -n "${DJANGO_SECRET_KEY}" ]; then
+            SECRET_KEY="${DJANGO_SECRET_KEY}"
+          else
+            echo "::warning::DJANGO_SECRET_KEY secret is not set - generating a throwaway one. Sessions and encrypted config will break on the next deploy. Set the DJANGO_SECRET_KEY repository secret to fix this permanently."
+            SECRET_KEY=$(openssl rand -hex 32)
+          fi
           echo "SECRET_KEY=\"${SECRET_KEY}\"" >> apps/api/.env
-          
+
+          # VJ Startups integration - these are never in .env.example (they're
+          # per-deployment secrets), so the plain `cp .env.example .env` above
+          # leaves them unset unless we add them here explicitly.
+          echo "VJ_MICROSERVICE_URL=\"${VJ_MICROSERVICE_URL:-https://vjstartup.com}\"" >> apps/api/.env
+          echo "PUBLIC_SITE_INTERNAL_TOKEN=\"${PUBLIC_SITE_INTERNAL_TOKEN}\"" >> apps/api/.env
+          echo "LIVE_SERVER_SECRET_KEY=\"${LIVE_SERVER_SECRET_KEY}\"" >> apps/api/.env
+          if [ -z "${PUBLIC_SITE_INTERNAL_TOKEN}" ]; then
+            echo "::warning::PUBLIC_SITE_INTERNAL_TOKEN secret is not set - the admin proxy to backend 2 (Problems/Ideas verify, user management) will not work. It must exactly match PLANE_INTERNAL_TOKEN in backend 2's own deploy secrets."
+          fi
+
+          # File storage: this stack runs Plane's own bundled minio container
+          # (see docker-compose.yml's plane-minio service and the root
+          # .env.example), not external S3 - apps/api/.env.example defaults to
+          # USE_MINIO=0 for bare-metal local dev, which is wrong here.
+          sed -i 's|USE_MINIO=0|USE_MINIO=1|g' apps/api/.env
+          echo 'AWS_S3_ENDPOINT_URL="http://plane-minio:9000"' >> apps/api/.env
+          echo 'AWS_ACCESS_KEY_ID="access-key"' >> apps/api/.env
+          echo 'AWS_SECRET_ACCESS_KEY="secret-key"' >> apps/api/.env
+          echo 'AWS_S3_BUCKET_NAME="uploads"' >> apps/api/.env
+
           # Fix API ENV for CORS and URLs
           sed -i "s|CORS_ALLOWED_ORIGINS=.*|CORS_ALLOWED_ORIGINS=\"${DOMAIN}\"|g" apps/api/.env
           sed -i "s|WEB_URL=.*|WEB_URL=\"${DOMAIN}\"|g" apps/api/.env
@@ -60,10 +93,15 @@ jobs:
           sed -i "s|ADMIN_BASE_URL=.*|ADMIN_BASE_URL=\"${DOMAIN}\"|g" apps/api/.env
           sed -i "s|SPACE_BASE_URL=.*|SPACE_BASE_URL=\"${DOMAIN}\"|g" apps/api/.env
           sed -i "s|LIVE_BASE_URL=.*|LIVE_BASE_URL=\"${DOMAIN}\"|g" apps/api/.env
-          
+
           # Expose the Plane Proxy on port 8888 (since port 80 is heavily used)
           sed -i 's/LISTEN_HTTP_PORT=80/LISTEN_HTTP_PORT=8888/g' .env
           sed -i 's/LISTEN_HTTPS_PORT=443/LISTEN_HTTPS_PORT=8443/g' .env
+        env:
+          DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+          VJ_MICROSERVICE_URL: ${{ vars.VJ_MICROSERVICE_URL }}
+          PUBLIC_SITE_INTERNAL_TOKEN: ${{ secrets.PUBLIC_SITE_INTERNAL_TOKEN }}
+          LIVE_SERVER_SECRET_KEY: ${{ secrets.LIVE_SERVER_SECRET_KEY }}
 
       - name: Expose Database Port (Override)
         run: |
@@ -92,3 +130,9 @@ jobs:
       - name: Seed VJ Startups Data
         run: |
           docker compose run --rm api python manage.py seed_vj_startups
+
+      - name: Backfill Cycles/Modules/Views on existing projects
+        run: |
+          # No-ops cleanly if every project already has these flags set - see
+          # apps/api/plane/vj_startups/management/commands/backfill_project_features.py
+          docker compose run --rm api python manage.py backfill_project_features
