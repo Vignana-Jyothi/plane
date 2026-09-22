@@ -10,6 +10,7 @@ from plane.vj_startups.serializers import StartupSerializer, EventSerializer, Or
 from plane.license.api.permissions.instance import InstanceAdminPermission
 from plane.authentication.session import BaseSessionAuthentication
 from plane.utils.exception_logger import log_exception
+from plane.bgtasks.vj_submission_verified_email_task import vj_submission_verified_email
 
 class WingSerializer(serializers.ModelSerializer):
     class Meta:
@@ -591,7 +592,16 @@ class AdminMicroserviceProblemVerifyProxyEndpoint(AdminMicroserviceProxyBase):
                 headers=self.get_headers(),
                 timeout=5,
             )
-            return Response(res.json(), status=res.status_code)
+            data = res.json()
+            if action == "verify" and res.status_code < 300 and data.get("addedByEmail"):
+                vj_submission_verified_email.delay(
+                    submission_type="problem",
+                    title=data.get("title", ""),
+                    added_by_name=data.get("addedByName", ""),
+                    added_by_email=data["addedByEmail"],
+                    submission_url=f"https://vjstartup.com/problems/{pk}",
+                )
+            return Response(data, status=res.status_code)
         except Exception as e:
             log_exception(e)
             return Response({"error": "Failed to reach the microservice"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -609,7 +619,16 @@ class AdminMicroserviceIdeaVerifyProxyEndpoint(AdminMicroserviceProxyBase):
                 headers=self.get_headers(),
                 timeout=5,
             )
-            return Response(res.json(), status=res.status_code)
+            data = res.json()
+            if action == "verify" and res.status_code < 300 and data.get("addedByEmail"):
+                vj_submission_verified_email.delay(
+                    submission_type="idea",
+                    title=data.get("title", ""),
+                    added_by_name=data.get("addedByName", ""),
+                    added_by_email=data["addedByEmail"],
+                    submission_url=f"https://vjstartup.com/ideas/{pk}",
+                )
+            return Response(data, status=res.status_code)
         except Exception as e:
             log_exception(e)
             return Response({"error": "Failed to reach the microservice"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
