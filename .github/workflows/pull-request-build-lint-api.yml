@@ -5,6 +5,13 @@ on:
   pull_request:
     branches:
       - "preview"
+      # This fork's own workflow PRs straight from our preview branch into
+      # master (see deploy-plane.yml) rather than upstream's own preview ->
+      # master flow, so without "master" here this check never ran on any
+      # of our PRs - api-side lint/build/type issues went completely
+      # unchecked. No branch protection requires this to pass, so adding it
+      # is purely additive visibility, not a new merge gate.
+      - "master"
     types:
       - "opened"
       - "synchronize"
