@@ -5,6 +5,11 @@ on:
   pull_request:
     branches:
       - "preview"
+      # Same reasoning as pull-request-build-lint-api.yml: our PRs target
+      # master directly, not this fork's own preview branch, so this never
+      # ran without "master" here. No branch protection requires it to
+      # pass - purely additive visibility.
+      - "master"
     types:
       - "opened"
       - "synchronize"
