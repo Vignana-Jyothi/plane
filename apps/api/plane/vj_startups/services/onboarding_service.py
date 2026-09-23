@@ -4,7 +4,18 @@ import random
 import requests
 from django.db import transaction
 from django.contrib.auth import get_user_model
-from plane.db.models import Workspace, WorkspaceMember, Project, ProjectMember, Issue, State, DEFAULT_STATES, Label, DEFAULT_LABELS
+from plane.db.models import (
+    Workspace,
+    WorkspaceMember,
+    Project,
+    ProjectMember,
+    ProjectIdentifier,
+    Issue,
+    State,
+    DEFAULT_STATES,
+    Label,
+    DEFAULT_LABELS,
+)
 from plane.vj_startups.models.startup import Startup, StartupMember
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 from plane.vj_startups.models.extension import VJProjectExtension, VJIssueExtension
@@ -59,6 +70,7 @@ class OnboardingService:
             }
         )
         if created:
+            cls._reserve_project_identifier(project)
             cls._seed_default_states(project)
             cls._seed_default_labels(project)
         return project
@@ -112,6 +124,27 @@ class OnboardingService:
         )
 
     @classmethod
+    def _reserve_project_identifier(cls, project):
+        """
+        Project.identifier itself has no database-level uniqueness constraint
+        (just an indexed CharField, see db/models/project.py) - uniqueness is
+        only actually enforced by ProjectIdentifier's UniqueConstraint on
+        (name, workspace). Plane's own project-creation serializer
+        (app/serializers/project.py's ProjectSerializer.create) creates this
+        row for every project; every VJ Startups project skipped it, since
+        none of it goes through that serializer. Without this row, someone
+        creating a project through the normal UI with an identifier already
+        in use by e.g. "COMMON" or "INFRA" would pass the availability check
+        and succeed, silently producing two projects with the same
+        identifier in the same workspace.
+        """
+        ProjectIdentifier.objects.get_or_create(
+            name=project.identifier,
+            workspace=project.workspace,
+            defaults={"project": project},
+        )
+
+    @classmethod
     def _generate_project_identifier(cls, name: str) -> str:
         # Plane identifier must be 1-12 chars, uppercase, alphanumeric
         base = "".join([c.upper() for c in name if c.isalnum()])
@@ -157,6 +190,7 @@ class OnboardingService:
             cycle_view=True,
             issue_views_view=True,
         )
+        cls._reserve_project_identifier(project)
         cls._seed_default_states(project)
         cls._seed_default_labels(project)
 
@@ -283,6 +317,7 @@ class OnboardingService:
             cycle_view=True,
             issue_views_view=True,
         )
+        cls._reserve_project_identifier(project)
         cls._seed_default_states(project)
         cls._seed_default_labels(project)
 

@@ -185,3 +185,9 @@ jobs:
           # No-ops cleanly if every project already has labels - see
           # apps/api/plane/vj_startups/management/commands/backfill_project_labels.py
           docker compose run --rm api python manage.py backfill_project_labels
+
+      - name: Backfill ProjectIdentifier rows on existing projects
+        run: |
+          # No-ops cleanly if every project already has a ProjectIdentifier - see
+          # apps/api/plane/vj_startups/management/commands/backfill_project_identifiers.py
+          docker compose run --rm api python manage.py backfill_project_identifiers

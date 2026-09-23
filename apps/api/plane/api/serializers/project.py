@@ -159,6 +159,11 @@ class ProjectCreateSerializer(BaseSerializer):
             }
 
         project = Project.objects.create(**validated_data, workspace_id=self.context["workspace_id"])
+        ProjectIdentifier.objects.create(
+            name=project.identifier,
+            project=project,
+            workspace_id=self.context["workspace_id"],
+        )
         return project
 
 
