@@ -173,3 +173,9 @@ jobs:
           # No-ops cleanly if every project already has these flags set - see
           # apps/api/plane/vj_startups/management/commands/backfill_project_features.py
           docker compose run --rm api python manage.py backfill_project_features
+
+      - name: Backfill default states on existing projects
+        run: |
+          # No-ops cleanly if every project already has states - see
+          # apps/api/plane/vj_startups/management/commands/backfill_project_states.py
+          docker compose run --rm api python manage.py backfill_project_states
