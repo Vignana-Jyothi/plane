@@ -179,3 +179,9 @@ jobs:
           # No-ops cleanly if every project already has states - see
           # apps/api/plane/vj_startups/management/commands/backfill_project_states.py
           docker compose run --rm api python manage.py backfill_project_states
+
+      - name: Backfill default labels on existing projects
+        run: |
+          # No-ops cleanly if every project already has labels - see
+          # apps/api/plane/vj_startups/management/commands/backfill_project_labels.py
+          docker compose run --rm api python manage.py backfill_project_labels

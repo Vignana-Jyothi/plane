@@ -4,7 +4,7 @@ import random
 import requests
 from django.db import transaction
 from django.contrib.auth import get_user_model
-from plane.db.models import Workspace, WorkspaceMember, Project, ProjectMember, Issue, State, DEFAULT_STATES
+from plane.db.models import Workspace, WorkspaceMember, Project, ProjectMember, Issue, State, DEFAULT_STATES, Label, DEFAULT_LABELS
 from plane.vj_startups.models.startup import Startup, StartupMember
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 from plane.vj_startups.models.extension import VJProjectExtension, VJIssueExtension
@@ -60,6 +60,7 @@ class OnboardingService:
         )
         if created:
             cls._seed_default_states(project)
+            cls._seed_default_labels(project)
         return project
 
     @classmethod
@@ -86,6 +87,27 @@ class OnboardingService:
                     default=state.get("default", False),
                 )
                 for state in DEFAULT_STATES
+            ]
+        )
+
+    @classmethod
+    def _seed_default_labels(cls, project):
+        """
+        Unlike states, Plane itself has no default-labels concept anywhere -
+        every project, however created, starts with zero. This is a new set
+        (see DEFAULT_LABELS in db/models/label.py), not replicating existing
+        behavior, seeded here purely for VJ Startups projects so they don't
+        start completely empty.
+        """
+        Label.objects.bulk_create(
+            [
+                Label(
+                    name=label["name"],
+                    color=label["color"],
+                    project=project,
+                    workspace=project.workspace,
+                )
+                for label in DEFAULT_LABELS
             ]
         )
 
@@ -136,6 +158,7 @@ class OnboardingService:
             issue_views_view=True,
         )
         cls._seed_default_states(project)
+        cls._seed_default_labels(project)
 
         # Map Project to Startup
         VJProjectExtension.objects.create(
@@ -261,6 +284,7 @@ class OnboardingService:
             issue_views_view=True,
         )
         cls._seed_default_states(project)
+        cls._seed_default_labels(project)
 
         VJProjectExtension.objects.create(
             project=project,
