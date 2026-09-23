@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.db.models import Count
 from django.db.models.functions import TruncDate
-from plane.db.models import User, Project, Issue, WorkspaceMember
+from plane.db.models import Project, Issue, WorkspaceMember
 from plane.vj_startups.models.contribution_snapshot import ContributionSnapshot
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 

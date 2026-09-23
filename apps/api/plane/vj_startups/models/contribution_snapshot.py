@@ -3,7 +3,9 @@ from django.conf import settings
 from plane.db.models import BaseModel, Project
 
 class ContributionSnapshot(BaseModel):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="vj_contribution_snapshots")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="vj_contribution_snapshots"
+    )
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="vj_contribution_snapshots")
     issues_closed = models.IntegerField(default=0)
     issues_assigned = models.IntegerField(default=0)

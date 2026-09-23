@@ -50,7 +50,10 @@ class MemberBadgeSerializer(serializers.ModelSerializer):
 class ContributionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contribution
-        fields = ("id", "title", "description", "type", "impact_score", "hours", "evidence_url", "created_at", "updated_at")
+        fields = (
+            "id", "title", "description", "type", "impact_score", "hours",
+            "evidence_url", "created_at", "updated_at",
+        )
 
 class OrganizationMemberProfileSerializer(serializers.ModelSerializer):
     user = UserSimpleSerializer(read_only=True)

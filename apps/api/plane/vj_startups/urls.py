@@ -31,7 +31,12 @@ from .views.admin import (
     AdminMicroserviceProblemVerifyProxyEndpoint,
     AdminMicroserviceIdeaVerifyProxyEndpoint
 )
-from .views.public_auth import PublicSiteUpsertUserEndpoint, InternalProvisionStartupEndpoint, DiagnoseMicroserviceProxyEndpoint, DiagnoseStorageEndpoint
+from .views.public_auth import (
+    PublicSiteUpsertUserEndpoint,
+    InternalProvisionStartupEndpoint,
+    DiagnoseMicroserviceProxyEndpoint,
+    DiagnoseStorageEndpoint,
+)
 
 urlpatterns = [
     # Admin
@@ -42,7 +47,11 @@ urlpatterns = [
     path("admin/wings/metrics/", AdminWingsMetricsEndpoint.as_view(), name="admin-wings-metrics"),
     path("admin/wings/<str:slug>/", AdminWingDetailEndpoint.as_view(), name="admin-wing-detail"),
     path("admin/wings/<str:slug>/members/", AdminWingMembersEndpoint.as_view(), name="admin-wing-members"),
-    path("admin/wings/<str:slug>/members/<uuid:user_id>/", AdminWingRemoveMemberEndpoint.as_view(), name="admin-wing-remove-member"),
+    path(
+        "admin/wings/<str:slug>/members/<uuid:user_id>/",
+        AdminWingRemoveMemberEndpoint.as_view(),
+        name="admin-wing-remove-member",
+    ),
     path("admin/wings/<str:slug>/invite/", AdminWingInviteEndpoint.as_view(), name="admin-wing-invite"),
     path("admin/metrics/", AdminStartupsMetricsEndpoint.as_view(), name="admin-metrics"),
     path("admin/events/", AdminEventEndpoint.as_view(), name="admin-events"),
@@ -51,12 +60,32 @@ urlpatterns = [
     path("admin/members/<uuid:pk>/", AdminClubMemberDetailEndpoint.as_view(), name="admin-club-member-detail"),
 
     # Microservice proxy routes
-    path("admin/microservice/ideas/", AdminMicroserviceIdeasProxyEndpoint.as_view(), name="admin-microservice-ideas"),
-    path("admin/microservice/problems/", AdminMicroserviceProblemsProxyEndpoint.as_view(), name="admin-microservice-problems"),
-    path("admin/microservice/users/", AdminMicroserviceUsersProxyEndpoint.as_view(), name="admin-microservice-users"),
-    path("admin/microservice/users/<str:pk>/", AdminMicroserviceUserDetailProxyEndpoint.as_view(), name="admin-microservice-user-detail"),
-    path("admin/microservice/problems/<str:pk>/verify/", AdminMicroserviceProblemVerifyProxyEndpoint.as_view(), name="admin-microservice-problem-verify"),
-    path("admin/microservice/ideas/<str:pk>/verify/", AdminMicroserviceIdeaVerifyProxyEndpoint.as_view(), name="admin-microservice-idea-verify"),
+    path(
+        "admin/microservice/ideas/", AdminMicroserviceIdeasProxyEndpoint.as_view(), name="admin-microservice-ideas"
+    ),
+    path(
+        "admin/microservice/problems/",
+        AdminMicroserviceProblemsProxyEndpoint.as_view(),
+        name="admin-microservice-problems",
+    ),
+    path(
+        "admin/microservice/users/", AdminMicroserviceUsersProxyEndpoint.as_view(), name="admin-microservice-users"
+    ),
+    path(
+        "admin/microservice/users/<str:pk>/",
+        AdminMicroserviceUserDetailProxyEndpoint.as_view(),
+        name="admin-microservice-user-detail",
+    ),
+    path(
+        "admin/microservice/problems/<str:pk>/verify/",
+        AdminMicroserviceProblemVerifyProxyEndpoint.as_view(),
+        name="admin-microservice-problem-verify",
+    ),
+    path(
+        "admin/microservice/ideas/<str:pk>/verify/",
+        AdminMicroserviceIdeaVerifyProxyEndpoint.as_view(),
+        name="admin-microservice-idea-verify",
+    ),
 
     # Public site (vjstartups-main-website) internal auth bridge
     path("public-auth/upsert-user/", PublicSiteUpsertUserEndpoint.as_view(), name="public-auth-upsert-user"),

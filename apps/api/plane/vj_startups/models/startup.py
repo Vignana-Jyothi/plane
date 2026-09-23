@@ -1,5 +1,4 @@
 from django.db import models
-from django.conf import settings
 from plane.db.models import BaseModel
 from .organization import OrganizationMemberProfile
 
@@ -43,10 +42,12 @@ class Startup(BaseModel):
     invited_emails = models.JSONField(default=list, blank=True)
 
     # Merged from the vjstartups-main-website (public site) Startup model.
-    founders_text = models.CharField(max_length=500, blank=True)  # free-text fallback where no linked StartupMember exists yet
+    # free-text fallback where no linked StartupMember exists yet
+    founders_text = models.CharField(max_length=500, blank=True)
     funding_status = models.CharField(max_length=30, choices=FundingStatus.choices, blank=True)
     incorporation_status = models.CharField(max_length=30, choices=IncorporationStatus.choices, blank=True)
-    financial_notes = models.TextField(blank=True)  # free-text revenue/funding detail that doesn't fit the structured decimal fields
+    # free-text revenue/funding detail that doesn't fit the structured decimal fields
+    financial_notes = models.TextField(blank=True)
     customers = models.CharField(max_length=255, blank=True)
     markets = models.CharField(max_length=255, blank=True)
     business_model = models.TextField(blank=True)
@@ -59,7 +60,8 @@ class Startup(BaseModel):
     competitive_advantage = models.TextField(blank=True)
     upvotes = models.IntegerField(default=0)
     views = models.IntegerField(default=0)
-    related_idea_id = models.CharField(max_length=255, null=True, blank=True, unique=True)  # soft reference to backend2's Idea.ideaId - Idea stays a Prisma-only model
+    # soft reference to backend2's Idea.ideaId - Idea stays a Prisma-only model
+    related_idea_id = models.CharField(max_length=255, null=True, blank=True, unique=True)
 
     class Meta:
         verbose_name = "Startup"

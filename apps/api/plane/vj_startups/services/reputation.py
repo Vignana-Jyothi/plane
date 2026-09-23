@@ -1,5 +1,4 @@
-from django.db.models import Sum, Count, F
-from django.utils import timezone
+from django.db.models import Sum
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 from plane.vj_startups.models.contribution import Contribution
 from plane.db.models import Issue
@@ -16,7 +15,9 @@ class ReputationService:
         execution_score = min(total_hours * 1.5, 100.0) # Example logic
 
         # Calculate impact score (based on impact_score of contributions)
-        total_impact = Contribution.objects.filter(member=member_profile).aggregate(Sum('impact_score'))['impact_score__sum'] or 0.0
+        total_impact = Contribution.objects.filter(
+            member=member_profile
+        ).aggregate(Sum('impact_score'))['impact_score__sum'] or 0.0
         impact_score = min(total_impact * 2.0, 100.0)
 
         # Calculate leadership score (based on mentorship, ops, etc.)
@@ -42,7 +43,12 @@ class ReputationService:
         reliability_score = (completed_issues / total_issues * 100.0) if total_issues > 0 else 100.0
 
         # Weighted calculation
-        reputation = (execution_score * 0.40) + (impact_score * 0.30) + (leadership_score * 0.20) + (learning_score * 0.10)
+        reputation = (
+            (execution_score * 0.40)
+            + (impact_score * 0.30)
+            + (leadership_score * 0.20)
+            + (learning_score * 0.10)
+        )
 
         # Update member profile
         member_profile.execution_score = execution_score
