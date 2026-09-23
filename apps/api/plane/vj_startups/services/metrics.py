@@ -1,4 +1,4 @@
-from django.db.models import Sum, Count
+from django.db.models import Sum
 from plane.vj_startups.models.organization import OrganizationMemberProfile, Wing
 from plane.vj_startups.models.startup import Startup
 from plane.vj_startups.models.contribution import Contribution

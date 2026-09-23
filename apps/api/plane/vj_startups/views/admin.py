@@ -1,8 +1,11 @@
+import os
+import datetime
+import requests
 from rest_framework import generics, status, serializers
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.utils.text import slugify
 from django.utils import timezone
-import datetime
 from plane.vj_startups.models.startup import Startup
 from plane.vj_startups.models.organization import Wing, OrganizationMemberProfile
 from plane.vj_startups.models.event import Event
@@ -66,7 +69,10 @@ class AdminWingDetailEndpoint(generics.RetrieveUpdateDestroyAPIView):
                 # Ensure they are onboarded to the wing
                 OnboardingService.onboard_user_to_wing(user, instance, role=20)
             else:
-                return Response({"error": f"No user found with email {wing_master_email}"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": f"No user found with email {wing_master_email}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -106,7 +112,10 @@ class AdminWingInviteEndpoint(generics.GenericAPIView):
                 OnboardingService.onboard_user_to_wing(user, wing, role=15)
 
             if not new_emails:
-                return Response({"message": f"Processed {len(emails)} emails. Users instantly onboarded."}, status=status.HTTP_200_OK)
+                return Response(
+                    {"message": f"Processed {len(emails)} emails. Users instantly onboarded."},
+                    status=status.HTTP_200_OK,
+                )
                 
             if wing.invited_emails is None:
                 wing.invited_emails = []
@@ -259,7 +268,12 @@ class AdminStartupDetailEndpoint(generics.RetrieveUpdateDestroyAPIView):
             headers = {"Content-Type": "application/json"}
             if token:
                 headers["Authorization"] = f"Bearer {token}"
-            requests.patch(f"{base_url}/admin-api/startups/{instance.id}/stage", json={"stage": instance.trl_stage}, headers=headers, timeout=2)
+            requests.patch(
+                f"{base_url}/admin-api/startups/{instance.id}/stage",
+                json={"stage": instance.trl_stage},
+                headers=headers,
+                timeout=2,
+            )
         except Exception as e:
             print("Failed to sync stage update to microservice:", e)
 
@@ -305,7 +319,10 @@ class AdminStartupInviteEndpoint(generics.GenericAPIView):
                 OnboardingService.onboard_user_to_startup(user, startup, role=15)
 
             if not new_emails:
-                return Response({"message": f"Processed {len(emails)} emails. Users instantly onboarded."}, status=status.HTTP_200_OK)
+                return Response(
+                    {"message": f"Processed {len(emails)} emails. Users instantly onboarded."},
+                    status=status.HTTP_200_OK,
+                )
 
             if startup.invited_emails is None:
                 startup.invited_emails = []
@@ -504,10 +521,6 @@ class AdminClubMemberDetailEndpoint(generics.RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(profile)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-import os
-import requests
-from rest_framework.views import APIView
 
 class AdminMicroserviceProxyBase(APIView):
     authentication_classes = [BaseSessionAuthentication]

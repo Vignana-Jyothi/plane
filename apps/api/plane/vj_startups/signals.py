@@ -8,7 +8,6 @@ from plane.vj_startups.models.contribution import Milestone
 from plane.vj_startups.models.extension import VJProjectExtension
 from plane.vj_startups.services.onboarding_service import OnboardingService
 from plane.vj_startups.models.organization import Wing, OrganizationMemberProfile
-from plane.vj_startups.services.onboarding_service import OnboardingService
 
 User = get_user_model()
 

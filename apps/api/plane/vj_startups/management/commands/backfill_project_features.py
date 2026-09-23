@@ -39,7 +39,9 @@ class Command(BaseCommand):
 
         count = projects.count()
         if count == 0:
-            self.stdout.write(self.style.SUCCESS("Nothing to backfill - all VJ Startups projects already have the flags set."))
+            self.stdout.write(self.style.SUCCESS(
+                "Nothing to backfill - all VJ Startups projects already have the flags set."
+            ))
             return
 
         self.stdout.write(f"{count} project(s) missing Cycles/Modules/Views:")

@@ -44,10 +44,18 @@ class Command(BaseCommand):
             {"name": "First Revenue", "slug": "first_revenue", "description": "Generated first revenue"},
             {"name": "100 Tasks", "slug": "100_tasks", "description": "Completed 100 tasks"},
             {"name": "Top Operator", "slug": "top_operator", "description": "Recognized for operational excellence"},
-            {"name": "Top Founder", "slug": "top_founder", "description": "Recognized for founding a successful startup"},
+            {
+                "name": "Top Founder",
+                "slug": "top_founder",
+                "description": "Recognized for founding a successful startup",
+            },
             {"name": "Mentor", "slug": "mentor", "description": "Mentored other members"},
             {"name": "Grant Winner", "slug": "grant_winner", "description": "Secured a grant"},
-            {"name": "Security Champion", "slug": "security_champion", "description": "Found or fixed major vulnerabilities"},
+            {
+                "name": "Security Champion",
+                "slug": "security_champion",
+                "description": "Found or fixed major vulnerabilities",
+            },
         ]
 
         with transaction.atomic():
@@ -207,7 +215,10 @@ class Command(BaseCommand):
             {
                 "name": "BandiWala",
                 "slug": "bandiwala",
-                "description": "BandiWala is a micro-commerce platform for street vendors, allowing them to broadcast local inventory in real-time.",
+                "description": (
+                    "BandiWala is a micro-commerce platform for street vendors, "
+                    "allowing them to broadcast local inventory in real-time."
+                ),
                 "tagline": "Empowering street vendors",
                 "trl_stage": 4, # MVP
                 "industry": "Ecommerce",

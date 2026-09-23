@@ -6,7 +6,9 @@ from .startup import Startup
 class Contribution(BaseModel):
     member = models.ForeignKey(OrganizationMemberProfile, on_delete=models.CASCADE, related_name="contributions")
     startup = models.ForeignKey(Startup, on_delete=models.CASCADE, related_name="contributions")
-    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True, related_name="vj_contributions")
+    project = models.ForeignKey(
+        Project, on_delete=models.SET_NULL, null=True, blank=True, related_name="vj_contributions"
+    )
     issue = models.ForeignKey(Issue, on_delete=models.SET_NULL, null=True, blank=True, related_name="vj_contributions")
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)

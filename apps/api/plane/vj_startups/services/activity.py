@@ -1,4 +1,3 @@
-from django.db import models
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 from plane.vj_startups.models.startup import Startup
 from typing import Optional

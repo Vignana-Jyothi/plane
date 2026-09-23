@@ -25,4 +25,8 @@ class ShowcaseMembersEndpoint(generics.ListAPIView):
     permission_classes = [AllowAny]
     
     def get_queryset(self):
-        return OrganizationMemberProfile.objects.filter(is_club_member=True).select_related('user', 'wing').order_by('-created_at')
+        return (
+            OrganizationMemberProfile.objects.filter(is_club_member=True)
+            .select_related('user', 'wing')
+            .order_by('-created_at')
+        )

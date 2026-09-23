@@ -1,6 +1,4 @@
 import os
-import string
-import random
 import requests
 from django.db import transaction
 from django.contrib.auth import get_user_model
@@ -302,7 +300,6 @@ class OnboardingService:
     @transaction.atomic
     def auto_provision_wing(cls, wing):
         """Called when a Wing is created."""
-        from plane.vj_startups.models.organization import Wing
         workspace = cls.get_or_create_global_workspace()
 
         identifier = cls._generate_project_identifier(wing.name)

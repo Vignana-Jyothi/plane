@@ -40,7 +40,9 @@ class Command(BaseCommand):
             try:
                 import pymongo
             except ImportError:
-                self.stderr.write("Error: pymongo library is not installed. Run 'pip install pymongo' or use --json-file instead.")
+                self.stderr.write(
+                    "Error: pymongo library is not installed. Run 'pip install pymongo' or use --json-file instead."
+                )
                 return
 
             try:

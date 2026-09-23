@@ -6,4 +6,4 @@ class VJStartupsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
 
     def ready(self):
-        import plane.vj_startups.signals
+        pass

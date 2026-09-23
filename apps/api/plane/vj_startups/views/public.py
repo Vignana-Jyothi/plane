@@ -3,7 +3,7 @@ from rest_framework.permissions import AllowAny
 from django.shortcuts import get_object_or_404
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 from plane.vj_startups.models.startup import Startup
-from plane.vj_startups.serializers import OrganizationMemberProfileSerializer, StartupSerializer
+from plane.vj_startups.serializers import StartupSerializer
 
 from rest_framework.response import Response
 from rest_framework import status
@@ -12,12 +12,13 @@ class PublicMemberProfileEndpoint(generics.RetrieveAPIView):
     permission_classes = [AllowAny]
 
     def get(self, request, slug, *args, **kwargs):
-        from plane.vj_startups.models.organization import OrganizationMemberProfile
         from plane.vj_startups.models.contribution_snapshot import ContributionSnapshot
         from plane.vj_startups.models.startup import StartupMember
         from django.db.models import Sum
 
-        profile = get_object_or_404(OrganizationMemberProfile.objects.select_related('user', 'wing'), user__username=slug)
+        profile = get_object_or_404(
+            OrganizationMemberProfile.objects.select_related('user', 'wing'), user__username=slug
+        )
         user = profile.user
         
         startups = list(StartupMember.objects.filter(member=profile).values_list('startup__name', flat=True))
