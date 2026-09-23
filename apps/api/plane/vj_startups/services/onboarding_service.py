@@ -4,7 +4,7 @@ import random
 import requests
 from django.db import transaction
 from django.contrib.auth import get_user_model
-from plane.db.models import Workspace, WorkspaceMember, Project, ProjectMember, Issue
+from plane.db.models import Workspace, WorkspaceMember, Project, ProjectMember, Issue, State, DEFAULT_STATES
 from plane.vj_startups.models.startup import Startup, StartupMember
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 from plane.vj_startups.models.extension import VJProjectExtension, VJIssueExtension
@@ -58,7 +58,36 @@ class OnboardingService:
                 "issue_views_view": True,
             }
         )
+        if created:
+            cls._seed_default_states(project)
         return project
+
+    @classmethod
+    def _seed_default_states(cls, project):
+        """
+        Projects created through Plane's own API (ProjectViewSet.create, see
+        app/views/project/base.py) get DEFAULT_STATES bulk-created right
+        after the project - but that seeding lives in the view layer, not a
+        model signal, so it never runs for a project created directly via
+        Project.objects.create() the way every method in this file does.
+        Every VJ Startups project was silently created with zero states
+        (found from a real "States" settings page showing nothing in any
+        group) - replicates that same seeding here.
+        """
+        State.objects.bulk_create(
+            [
+                State(
+                    name=state["name"],
+                    color=state["color"],
+                    project=project,
+                    sequence=state["sequence"],
+                    workspace=project.workspace,
+                    group=state["group"],
+                    default=state.get("default", False),
+                )
+                for state in DEFAULT_STATES
+            ]
+        )
 
     @classmethod
     def _generate_project_identifier(cls, name: str) -> str:
@@ -106,6 +135,7 @@ class OnboardingService:
             cycle_view=True,
             issue_views_view=True,
         )
+        cls._seed_default_states(project)
 
         # Map Project to Startup
         VJProjectExtension.objects.create(
@@ -230,6 +260,7 @@ class OnboardingService:
             cycle_view=True,
             issue_views_view=True,
         )
+        cls._seed_default_states(project)
 
         VJProjectExtension.objects.create(
             project=project,
