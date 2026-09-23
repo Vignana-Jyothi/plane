@@ -37,7 +37,9 @@ class Command(BaseCommand):
 
         count = projects.count()
         if count == 0:
-            self.stdout.write(self.style.SUCCESS("Nothing to backfill - every project already has a ProjectIdentifier."))
+            self.stdout.write(self.style.SUCCESS(
+                "Nothing to backfill - every project already has a ProjectIdentifier."
+            ))
             return
 
         self.stdout.write(f"{count} project(s) with no ProjectIdentifier:")
