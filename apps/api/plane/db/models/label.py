@@ -8,6 +8,23 @@ from django.db.models import Q
 from .workspace import WorkspaceBaseModel
 
 
+# Default labels for VJ Startups projects - Plane itself ships with no
+# default labels anywhere (every project, however created, starts with
+# zero), unlike DEFAULT_STATES in state.py. This is a genuinely new set,
+# not replicating existing behavior - picked to be useful across both
+# software-startup projects and non-software Wing projects (Talent, Fuel,
+# Echo, Vision, Ignition, Infra) rather than assuming everyone is shipping
+# code. See vj_startups/services/onboarding_service.py's _seed_default_labels.
+DEFAULT_LABELS = [
+    {"name": "Bug", "color": "#EF4444"},
+    {"name": "Feature", "color": "#3B82F6"},
+    {"name": "Urgent", "color": "#F97316"},
+    {"name": "Blocked", "color": "#6B7280"},
+    {"name": "Needs Review", "color": "#A855F7"},
+    {"name": "Documentation", "color": "#14B8A6"},
+]
+
+
 class Label(WorkspaceBaseModel):
     parent = models.ForeignKey(
         "self",
