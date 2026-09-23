@@ -30,7 +30,15 @@ jobs:
         run: echo "PR_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
 
       - name: Fetch base branch
-        run: git fetch origin master:master
+        # The checkout step above pins `repository:` to the PR's HEAD repo
+        # (the fork, for a fork PR) so `origin` here refers to the fork, not
+        # this base repo - `git fetch origin master:master` fails outright
+        # whenever the fork has no branch literally named "master" (as is
+        # normal for a fork whose own work happens on other branch names).
+        # `github.repository` is always the base repo on pull_request events
+        # (see the comment on the checkout step), so fetch from it by URL
+        # instead of relying on the ambiguous `origin` remote name.
+        run: git fetch https://github.com/${{ github.repository }}.git master:master
 
       - name: Get Master Branch version
         run: |
