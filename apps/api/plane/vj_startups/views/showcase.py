@@ -3,11 +3,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from plane.vj_startups.models.startup import Startup
 from plane.vj_startups.models.organization import OrganizationMemberProfile
-from plane.vj_startups.serializers import StartupSerializer, OrganizationMemberProfileSerializer
+from plane.vj_startups.serializers import PublicStartupSerializer, PublicMemberSerializer
 from plane.vj_startups.services.metrics import MetricsService
 
 class ShowcaseStartupsEndpoint(generics.ListAPIView):
-    serializer_class = StartupSerializer
+    serializer_class = PublicStartupSerializer
     permission_classes = [AllowAny]
     
     def get_queryset(self):
@@ -21,7 +21,7 @@ class ShowcaseMetricsEndpoint(generics.GenericAPIView):
         return Response(metrics)
 
 class ShowcaseMembersEndpoint(generics.ListAPIView):
-    serializer_class = OrganizationMemberProfileSerializer
+    serializer_class = PublicMemberSerializer
     permission_classes = [AllowAny]
     
     def get_queryset(self):
