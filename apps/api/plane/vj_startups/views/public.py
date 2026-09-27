@@ -3,7 +3,7 @@ from rest_framework.permissions import AllowAny
 from django.shortcuts import get_object_or_404
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 from plane.vj_startups.models.startup import Startup
-from plane.vj_startups.serializers import StartupSerializer
+from plane.vj_startups.serializers import PublicStartupSerializer
 
 from rest_framework.response import Response
 from rest_framework import status
@@ -65,7 +65,7 @@ class PublicMemberProfileEndpoint(generics.RetrieveAPIView):
         return Response(data, status=status.HTTP_200_OK)
 
 class PublicStartupProfileEndpoint(generics.RetrieveAPIView):
-    serializer_class = StartupSerializer
+    serializer_class = PublicStartupSerializer
     permission_classes = [AllowAny]
     lookup_field = "slug"
 
