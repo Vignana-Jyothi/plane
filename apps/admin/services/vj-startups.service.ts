@@ -179,9 +179,10 @@ export class VJStartupsService extends APIService {
   }
 
   // MICROSERVICE ENDPOINTS (Proxied via Django)
-  // On failure (e.g. VJ_MICROSERVICE_ADMIN_TOKEN missing/invalid), these resolve to an
-  // empty-but-valid shape plus an `error` message, rather than throwing - callers should
-  // check `.error` to distinguish "genuinely empty" from "couldn't reach the service".
+  // On failure (e.g. PUBLIC_SITE_INTERNAL_TOKEN missing/invalid on Django's side), these
+  // resolve to an empty-but-valid shape plus an `error` message, rather than throwing -
+  // callers should check `.error` to distinguish "genuinely empty" from "couldn't reach
+  // the service".
   private microserviceErrorMessage(err: any): string {
     return (
       err?.response?.data?.error ||
