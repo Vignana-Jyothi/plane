@@ -17,6 +17,7 @@ from plane.db.models import (
 from plane.vj_startups.models.startup import Startup, StartupMember
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 from plane.vj_startups.models.extension import VJProjectExtension, VJIssueExtension
+from plane.utils.exception_logger import log_exception
 
 User = get_user_model()
 
@@ -272,7 +273,11 @@ class OnboardingService:
             res = requests.get(f"{base_url}/idea-api/ideas/{idea_id}", timeout=3)
             res.raise_for_status()
             idea = res.json()
-        except Exception:
+        except Exception as e:
+            # Deliberately still swallowed - see docstring - but logged now
+            # rather than silently invisible, so a 100%-failure case (e.g. a
+            # bad VJ_MICROSERVICE_URL) is actually discoverable.
+            log_exception(e)
             return
 
         title = (idea.get("title") or f"Idea {idea_id}").strip()[:255]
@@ -293,8 +298,10 @@ class OnboardingService:
                 project=project,
             )
             VJIssueExtension.objects.create(issue=issue, startup=startup)
-        except Exception:
-            pass
+        except Exception as e:
+            # Same as above - best-effort by design, but logged now instead
+            # of silently swallowed.
+            log_exception(e)
 
     @classmethod
     @transaction.atomic
