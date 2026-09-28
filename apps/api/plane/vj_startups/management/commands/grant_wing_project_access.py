@@ -101,7 +101,9 @@ class Command(BaseCommand):
             return
 
         if not to_create:
-            self.stdout.write(self.style.SUCCESS("Nothing to do - every wing member already has access to every project."))
+            self.stdout.write(
+                self.style.SUCCESS("Nothing to do - every wing member already has access to every project.")
+            )
             return
 
         # Plane's own project-invite-acceptance flow (app/views/project/invite.py)
