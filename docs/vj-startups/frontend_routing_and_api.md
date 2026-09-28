@@ -89,7 +89,7 @@ The following front-end routes are declared in `apps/admin/app/routes.ts` for re
 ---
 
 ## 3. Plane Admin Panel (apps/admin) Call Route: VJ Startups Service (backend 2) via Django Proxy
-The admin panel calls Django API proxy endpoints to fetch and manage microservice data. Django authorizes the request using Plane session cookies and then forwards the call to `backend 2` using the server's configured `VJ_MICROSERVICE_ADMIN_TOKEN` token.
+The admin panel calls Django API proxy endpoints to fetch and manage microservice data. Django authorizes the request using Plane session cookies and then forwards the call to `backend 2` using the shared `PUBLIC_SITE_INTERNAL_TOKEN`/`X-Internal-Token` bridge, attributing the write to the real acting admin via `X-Acting-Admin-Email` (see `production_env_checklist.md` - `VJ_MICROSERVICE_ADMIN_TOKEN` was deprecated 2026-09-21).
 
 #### `GET /api/vj-startups/admin/microservice/ideas/?page=<page>&limit=<limit>&search=<query>`
 - **Purpose**: Paginated audit list of student-submitted ideas.

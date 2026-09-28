@@ -49,5 +49,5 @@ Because the systems run on independent backends, they correlate entities via uni
 
 ## Authentication & Authorization Architecture
 
-- **admin.vjstartup.com**: Logs in using native Plane session cookies. To perform administrative operations on the Express microservice (e.g. view ideas or manage website roles), the admin frontend calls Django's proxy endpoints (`/api/vj-startups/admin/microservice/...`). The Django server validates the admin session and forwards the request to `backend 2` using the server-side environment token `VJ_MICROSERVICE_ADMIN_TOKEN`.
+- **admin.vjstartup.com**: Logs in using native Plane session cookies. To perform administrative operations on the Express microservice (e.g. view ideas or manage website roles), the admin frontend calls Django's proxy endpoints (`/api/vj-startups/admin/microservice/...`). The Django server validates the admin session and forwards the request to `backend 2` using the shared `PUBLIC_SITE_INTERNAL_TOKEN`/`X-Internal-Token` secret, plus `X-Acting-Admin-Email` to attribute the write to the real acting admin (the older `VJ_MICROSERVICE_ADMIN_TOKEN` was deprecated 2026-09-21 - see `production_env_checklist.md`).
 - **vjstartup.com**: Logs in via Firebase Google OAuth. The client frontend verifies the login, extracts the email, and sends the user's email in request bodies or headers to verify permission.

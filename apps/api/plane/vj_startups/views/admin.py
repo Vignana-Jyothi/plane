@@ -264,10 +264,18 @@ class AdminStartupDetailEndpoint(generics.RetrieveUpdateDestroyAPIView):
         instance = serializer.save()
         try:
             base_url = os.environ.get("VJ_MICROSERVICE_URL") or os.environ.get("NEXT_PUBLIC_MICROSERVICE_URL") or "http://localhost:6220"
-            token = os.environ.get("VJ_MICROSERVICE_ADMIN_TOKEN")
+            # VJ_MICROSERVICE_ADMIN_TOKEN was deprecated 2026-09-21 in favor of
+            # the same X-Internal-Token/X-Acting-Admin-Email bridge every other
+            # admin-proxy call in this file uses (see AdminMicroserviceProxyBase.
+            # get_headers() above) - this call was never migrated, so it's been
+            # sending no Authorization header at all and silently 401ing on
+            # backend 2 ever since, with the failure swallowed by the except
+            # below and only a bare print() to stdout.
             headers = {"Content-Type": "application/json"}
-            if token:
-                headers["Authorization"] = f"Bearer {token}"
+            internal_token = os.environ.get("PUBLIC_SITE_INTERNAL_TOKEN")
+            if internal_token:
+                headers["X-Internal-Token"] = internal_token
+                headers["X-Acting-Admin-Email"] = self.request.user.email
             requests.patch(
                 f"{base_url}/admin-api/startups/{instance.id}/stage",
                 json={"stage": instance.trl_stage},
@@ -275,7 +283,7 @@ class AdminStartupDetailEndpoint(generics.RetrieveUpdateDestroyAPIView):
                 timeout=2,
             )
         except Exception as e:
-            print("Failed to sync stage update to microservice:", e)
+            log_exception(e)
 
     def perform_destroy(self, instance):
         from plane.vj_startups.models.extension import VJProjectExtension
