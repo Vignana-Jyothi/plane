@@ -84,7 +84,16 @@ jobs:
           # VJ Startups integration - these are never in .env.example (they're
           # per-deployment secrets), so the plain `cp .env.example .env` above
           # leaves them unset unless we add them here explicitly.
-          echo "VJ_MICROSERVICE_URL=\"${VJ_MICROSERVICE_URL:-https://vjstartup.com}\"" >> apps/api/.env
+          #
+          # No silent fallback here: this used to default to
+          # "https://vjstartup.com" (the main marketing site's own domain,
+          # not the Express API) whenever the VJ_MICROSERVICE_URL repo
+          # variable was unset, which would send every admin-proxy request
+          # to the wrong host instead of failing loudly.
+          if [ -z "${VJ_MICROSERVICE_URL}" ]; then
+            echo "::warning::VJ_MICROSERVICE_URL repo variable is not set - the admin proxy to backend 2 (Problems/Ideas verify, user management, startup project provisioning) will not work. Set it to backend 2's own base URL (e.g. https://api.vjstartups.com)."
+          fi
+          echo "VJ_MICROSERVICE_URL=\"${VJ_MICROSERVICE_URL}\"" >> apps/api/.env
           echo "PUBLIC_SITE_INTERNAL_TOKEN=\"${PUBLIC_SITE_INTERNAL_TOKEN}\"" >> apps/api/.env
           echo "LIVE_SERVER_SECRET_KEY=\"${LIVE_SERVER_SECRET_KEY}\"" >> apps/api/.env
           # apps/live also needs this same value to authenticate with the

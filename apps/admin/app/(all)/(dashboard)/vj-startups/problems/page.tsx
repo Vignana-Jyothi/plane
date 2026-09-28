@@ -148,8 +148,8 @@ export default function ProblemsAuditPage() {
                         <AlertCircle className="text-red-500 mb-1 h-8 w-8" />
                         <p className="text-red-500 font-medium">Could not load problems from the ecosystem service.</p>
                         <p className="max-w-md text-11 text-tertiary">
-                          {data.error} — check VJ_MICROSERVICE_URL / VJ_MICROSERVICE_ADMIN_TOKEN in the API's
-                          environment.
+                          {data.error} — check VJ_MICROSERVICE_URL / PUBLIC_SITE_INTERNAL_TOKEN in the API's
+                          environment (must match PLANE_INTERNAL_TOKEN on backend 2).
                         </p>
                       </div>
                     </td>
