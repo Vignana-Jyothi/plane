@@ -7,8 +7,9 @@ name: Data operations (manual)
 # writes nothing. Every real run takes a database backup first.
 #
 # Parts: team-members, problems-and-ideas (legacy data import),
-# lock-demo-accounts (neutralise the fixture accounts old deploys created) and
-# wing-access (give a wing's members access to every project in a workspace).
+# lock-demo-accounts (neutralise the fixture accounts old deploys created),
+# wing-access (give a wing's members access to every project in a workspace) and
+# instance-admin (let an existing account open Plane's /god-mode/ panel).
 #
 # This repository is PUBLIC, so run logs are public. Every email address in the
 # output is masked and per-person lines are suppressed - only counts and
@@ -26,6 +27,7 @@ on:
           - problems-and-ideas
           - lock-demo-accounts
           - wing-access
+          - instance-admin
       apply:
         description: Write to the database (leave unticked for a dry run that writes nothing)
         type: boolean
@@ -52,6 +54,10 @@ on:
         description: "lock-demo-accounts only: also deactivate the accounts (otherwise just remove password and superuser)"
         type: boolean
         default: false
+      email:
+        description: "instance-admin only: the email of an account that has already signed in to Plane once"
+        type: string
+        required: false
 
 concurrency:
   group: legacy-data-migration
@@ -171,6 +177,50 @@ jobs:
           run_quiet '^(Wing |Workspace |Dry run|Granted|Nothing|  \(added)' \
             docker exec api python manage.py grant_wing_project_access \
               --wing "$WING" --workspace "$WORKSPACE" --role "$ROLE" $flags
+
+      # Instance Admin is Plane's own list of people who may open /god-mode/. It is separate from
+      # the site's ADMIN role (Ecosystem Users) and from being an Admin inside a workspace. The
+      # account must already exist, i.e. the person has signed in to Plane once.
+      - name: Make an account a Plane Instance Admin
+        if: inputs.part == 'instance-admin'
+        env:
+          ADMIN_EMAIL: ${{ inputs.email }}
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/helpers.sh"
+
+          email=$(printf '%s' "$ADMIN_EMAIL" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+          if ! printf '%s' "$email" | grep -Eq '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'; then
+            echo "::error::Fill in the 'email' input with a valid email address."
+            exit 1
+          fi
+          docker inspect api > /dev/null || { echo "::error::No container named 'api' is running."; exit 1; }
+          docker exec api test -f plane/db/management/commands/create_instance_admin.py \
+            || { echo "::error::create_instance_admin is not in the running API image."; exit 1; }
+          export ADMIN_EMAIL="$email"
+
+          # The address is passed through the environment, never pasted into code, and is not
+          # printed: this repository's logs are public.
+          check_py='import os
+          from plane.db.models import User
+          from plane.license.models import InstanceAdmin
+          user = User.objects.filter(email=os.environ["ADMIN_EMAIL"]).first()
+          if user is None:
+              print("account exists: NO - the person must sign in to Plane once first")
+          else:
+              print("account exists: yes")
+              print("active: " + ("yes" if user.is_active else "NO"))
+              print("already an instance admin: " + ("yes" if InstanceAdmin.objects.filter(user=user).exists() else "no"))'
+
+          echo "Mode: $([ "$APPLY" = "true" ] && echo APPLY || echo 'dry run - nothing is written')"
+          printf '%s\n' "$check_py" | docker exec -i -e ADMIN_EMAIL api python manage.py shell 2>&1 \
+            | grep -E '^(account exists|active|already an instance admin)' \
+            || { echo "::error::Could not check the account."; exit 1; }
+
+          if [ "$APPLY" = "true" ]; then
+            # Refuses (with a clear message) if the account is missing or already an admin.
+            run_quiet '.' docker exec api python manage.py create_instance_admin "$email"
+          fi
 
       - name: Team members (wings, roles, headline, LinkedIn)
         if: inputs.part == 'team-members'
