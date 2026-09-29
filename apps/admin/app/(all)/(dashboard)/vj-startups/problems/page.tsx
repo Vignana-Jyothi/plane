@@ -91,7 +91,7 @@ export default function ProblemsAuditPage() {
               </thead>
               <tbody className="divide-y divide-subtle">
                 {data?.problems?.map((problem: any) => (
-                  <tr key={problem._id} className="transition-colors hover:bg-layer-2">
+                  <tr key={problem.id} className="transition-colors hover:bg-layer-2">
                     <td className="px-6 py-4">
                       <div className="font-semibold text-primary">{problem.title}</div>
                       {problem.description && (

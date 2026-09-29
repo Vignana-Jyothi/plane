@@ -96,7 +96,7 @@ export default function UsersAuditPage() {
               </thead>
               <tbody className="divide-y divide-subtle">
                 {data?.users?.map((u: any) => (
-                  <tr key={u._id} className="transition-colors hover:bg-layer-2">
+                  <tr key={u.id} className="transition-colors hover:bg-layer-2">
                     <td className="flex items-center gap-2.5 px-6 py-4">
                       <img
                         src={
@@ -122,10 +122,10 @@ export default function UsersAuditPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Button variant="secondary" size="sm" onClick={() => handleRoleToggle(u._id, u.role)}>
+                        <Button variant="secondary" size="sm" onClick={() => handleRoleToggle(u.id, u.role)}>
                           {u.role === "admin" ? "Demote" : "Make Admin"}
                         </Button>
-                        <Button variant="error-fill" size="sm" onClick={() => handleDelete(u._id, u.name)}>
+                        <Button variant="error-fill" size="sm" onClick={() => handleDelete(u.id, u.name)}>
                           Delete
                         </Button>
                       </div>
