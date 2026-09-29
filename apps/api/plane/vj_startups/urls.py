@@ -34,8 +34,6 @@ from .views.admin import (
 from .views.public_auth import (
     PublicSiteUpsertUserEndpoint,
     InternalProvisionStartupEndpoint,
-    DiagnoseMicroserviceProxyEndpoint,
-    DiagnoseStorageEndpoint,
 )
 
 urlpatterns = [
@@ -90,8 +88,6 @@ urlpatterns = [
     # Public site (vjstartups-main-website) internal auth bridge
     path("public-auth/upsert-user/", PublicSiteUpsertUserEndpoint.as_view(), name="public-auth-upsert-user"),
     path("internal/provision-startup/", InternalProvisionStartupEndpoint.as_view(), name="internal-provision-startup"),
-    path("internal/diagnose-proxy/", DiagnoseMicroserviceProxyEndpoint.as_view(), name="internal-diagnose-proxy"),
-    path("internal/diagnose-storage/", DiagnoseStorageEndpoint.as_view(), name="internal-diagnose-storage"),
 
     # Leaderboards
     path("leaderboards/members/", MemberLeaderboardEndpoint.as_view(), name="leaderboard-members"),
