@@ -1,0 +1,164 @@
+name: Legacy data migration (manual)
+
+# Runs the steps in docs/vj-startups/legacy_data_migration.md on the dev-ai
+# server through the same self-hosted runner that deploys Plane, so nobody
+# needs shell access. Trigger it by hand from the Actions tab (or `gh workflow
+# run`). Leave "apply" unticked first: that is a dry run and writes nothing.
+#
+# This repository is PUBLIC, so run logs are public. Every email address in the
+# output is masked and per-person lines from the account migration are
+# suppressed - only counts and summaries are printed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      part:
+        description: Which migration to run
+        type: choice
+        required: true
+        options:
+          - team-members
+          - problems-and-ideas
+      apply:
+        description: Write to the database (leave unticked for a dry run that writes nothing)
+        type: boolean
+        default: false
+
+concurrency:
+  group: legacy-data-migration
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    name: ${{ inputs.part }} (${{ inputs.apply && 'APPLY' || 'dry run' }})
+    runs-on: [self-hosted, dev-ai]
+    timeout-minutes: 30
+    env:
+      APPLY: ${{ inputs.apply }}
+    steps:
+      - name: Write helpers
+        run: |
+          cat > "$RUNNER_TEMP/helpers.sh" <<'HELPERS'
+          # Replace every email address so nothing personal reaches the public log.
+          mask() { sed -E 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/<email>/g'; }
+
+          # run_quiet <keep-regex> <command...>
+          # Runs the command, prints only the lines matching keep-regex (masked),
+          # or the tail of the output if the command fails.
+          run_quiet() {
+            local keep="$1"; shift
+            local out rc
+            set +e
+            out=$("$@" 2>&1)
+            rc=$?
+            set -e
+            if [ "$rc" -ne 0 ]; then
+              echo "::error::command failed (exit $rc). Last lines, emails masked:"
+              printf '%s\n' "$out" | tail -n 25 | mask
+              return "$rc"
+            fi
+            printf '%s\n' "$out" | grep -E "$keep" | mask | grep -vE '^\s+<email>\s*$' || true
+          }
+          HELPERS
+
+      - name: Team members (wings, roles, headline, LinkedIn)
+        if: inputs.part == 'team-members'
+        env:
+          TEAM_SHEET_CSV: ${{ secrets.TEAM_SHEET_CSV }}
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/helpers.sh"
+
+          if [ -z "${TEAM_SHEET_CSV:-}" ]; then
+            echo "::error::The TEAM_SHEET_CSV secret is not set. Add the team sheet (exported as CSV) as a repository secret first."
+            exit 1
+          fi
+          docker inspect api > /dev/null || { echo "::error::No container named 'api' is running."; exit 1; }
+          docker exec api test -f plane/vj_startups/management/commands/import_team_members.py \
+            || { echo "::error::import_team_members is not in the running API image yet - wait for the Plane deploy to finish."; exit 1; }
+
+          trap 'docker exec api rm -f /tmp/team.csv' EXIT
+          printf '%s\n' "$TEAM_SHEET_CSV" | docker exec -i api sh -c 'cat > /tmp/team.csv'
+
+          flags="--create-missing"
+          if [ "$APPLY" != "true" ]; then flags="$flags --dry-run"; fi
+          echo "Mode: $([ "$APPLY" = "true" ] && echo APPLY || echo 'dry run - nothing is written')"
+          run_quiet '^(Would apply|Applied|Skipped|[0-9]+ skipped|  (create|update):)' \
+            docker exec api python manage.py import_team_members --csv-file /tmp/team.csv $flags
+
+      - name: Find the backend 2 container
+        if: inputs.part == 'problems-and-ideas'
+        run: |
+          set -euo pipefail
+          mapfile -t found < <(docker ps --filter publish=6220 --format '{{.Names}}')
+          if [ "${#found[@]}" -ne 1 ]; then
+            echo "::error::expected exactly one container publishing port 6220, found ${#found[@]}: ${found[*]:-none}"
+            exit 1
+          fi
+          docker exec "${found[0]}" test -f scripts/import-legacy-mongo.js \
+            || { echo "::error::The migration scripts are not in the backend 2 image yet - wait for its deploy to finish."; exit 1; }
+          docker inspect api > /dev/null || { echo "::error::No container named 'api' is running."; exit 1; }
+          echo "BACKEND=${found[0]}" >> "$GITHUB_ENV"
+          echo "Mode: $([ "$APPLY" = "true" ] && echo APPLY || echo 'dry run - nothing is written')"
+
+      - name: Download problems and ideas from the live site (read-only)
+        if: inputs.part == 'problems-and-ideas'
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/helpers.sh"
+          run_quiet '^(Saved|WARNING)' docker exec "$BACKEND" node scripts/fetch-legacy-public-data.js --out /tmp/legacy
+
+      - name: List the people who need accounts
+        if: inputs.part == 'problems-and-ideas'
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/helpers.sh"
+          run_quiet '^Wrote' docker exec "$BACKEND" node scripts/extract-legacy-users.js \
+            --problems /tmp/legacy/problems.json --ideas /tmp/legacy/ideas.json --out /tmp/legacy/users.json
+          docker exec "$BACKEND" cat /tmp/legacy/users.json | docker exec -i api sh -c 'cat > /tmp/users.json'
+
+      - name: Create the accounts (Plane)
+        if: inputs.part == 'problems-and-ideas'
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/helpers.sh"
+          flags=""
+          if [ "$APPLY" != "true" ]; then flags="--dry-run"; fi
+          # The command prints one line per person (with usernames derived from
+          # their email) - keep only the totals.
+          run_quiet '^(Reading|Connecting|Fetched|Processing|Migration completed|Failed|Error)' \
+            docker exec api python manage.py migrate_mongo_users --json-file /tmp/users.json $flags
+
+      - name: Preview the import (now that the accounts exist)
+        if: inputs.part == 'problems-and-ideas' && inputs.apply
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/helpers.sh"
+          run_quiet '^(DRY RUN|People referenced|Problems:|Ideas:|Finished|  [0-9]+ (skipped|warning|FAILED)|  source fields)' \
+            docker exec "$BACKEND" node scripts/import-legacy-mongo.js \
+              --problems /tmp/legacy/problems.json --ideas /tmp/legacy/ideas.json --dry-run
+
+      - name: Import problems and ideas
+        if: inputs.part == 'problems-and-ideas'
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/helpers.sh"
+          if [ "$APPLY" = "true" ]; then
+            flags=""
+            keep='.'
+          else
+            flags="--dry-run"
+            keep='^(DRY RUN|People referenced|Problems:|Ideas:|Finished|  [0-9]+ (skipped|warning|FAILED)|  source fields)'
+            echo "Dry run: the accounts above were NOT created, so the importer will report people without an account and skip their records. Counts only are shown."
+          fi
+          run_quiet "$keep" docker exec "$BACKEND" node scripts/import-legacy-mongo.js \
+            --problems /tmp/legacy/problems.json --ideas /tmp/legacy/ideas.json $flags
+
+      - name: Clean up temporary files
+        if: always() && inputs.part == 'problems-and-ideas'
+        run: |
+          if [ -n "${BACKEND:-}" ]; then docker exec "$BACKEND" rm -rf /tmp/legacy || true; fi
+          docker exec api rm -f /tmp/users.json || true
