@@ -1,26 +1,55 @@
-name: Legacy data migration (manual)
+name: Data operations (manual)
 
-# Runs the steps in docs/vj-startups/legacy_data_migration.md on the dev-ai
-# server through the same self-hosted runner that deploys Plane, so nobody
-# needs shell access. Trigger it by hand from the Actions tab (or `gh workflow
-# run`). Leave "apply" unticked first: that is a dry run and writes nothing.
+# One-off data operations on the dev-ai server, run through the same
+# self-hosted runner that deploys Plane, so nobody needs shell access. See
+# docs/vj-startups/legacy_data_migration.md. Trigger it by hand from the Actions
+# tab (or `gh workflow run`). Leave "apply" unticked first: that is a dry run and
+# writes nothing. Every real run takes a database backup first.
+#
+# Parts: team-members, problems-and-ideas (legacy data import),
+# lock-demo-accounts (neutralise the fixture accounts old deploys created) and
+# wing-access (give a wing's members access to every project in a workspace).
 #
 # This repository is PUBLIC, so run logs are public. Every email address in the
-# output is masked and per-person lines from the account migration are
-# suppressed - only counts and summaries are printed.
+# output is masked and per-person lines are suppressed - only counts and
+# summaries are printed.
 
 on:
   workflow_dispatch:
     inputs:
       part:
-        description: Which migration to run
+        description: Which operation to run
         type: choice
         required: true
         options:
           - team-members
           - problems-and-ideas
+          - lock-demo-accounts
+          - wing-access
       apply:
         description: Write to the database (leave unticked for a dry run that writes nothing)
+        type: boolean
+        default: false
+      wing:
+        description: "wing-access only: the wing's slug or exact name (e.g. vision)"
+        type: string
+        required: false
+      workspace:
+        description: "wing-access only: workspace slug"
+        type: string
+        required: false
+        default: vj-startups
+      role:
+        description: "wing-access only: project role to grant (15 = Member, 5 = Guest, 20 = Admin)"
+        type: choice
+        required: false
+        default: "15"
+        options:
+          - "15"
+          - "5"
+          - "20"
+      deactivate:
+        description: "lock-demo-accounts only: also deactivate the accounts (otherwise just remove password and superuser)"
         type: boolean
         default: false
 
@@ -63,6 +92,85 @@ jobs:
             printf '%s\n' "$out" | grep -E "$keep" | mask | grep -vE '^\s+<email>\s*$' || true
           }
           HELPERS
+
+      - name: Back up the database first
+        if: inputs.apply
+        env:
+          BACKUP_DIR: ${{ vars.BACKUP_DIR }}
+          PART: ${{ inputs.part }}
+        run: |
+          set -euo pipefail
+          docker inspect plane-db > /dev/null \
+            || { echo "::error::No container named 'plane-db' is running - refusing to write without a backup."; exit 1; }
+
+          dir="${BACKUP_DIR:-$HOME/vj-backups}"
+          mkdir -p "$dir"
+          chmod 700 "$dir"
+          file="$dir/plane_$(date -u +%Y%m%d_%H%M%SZ)_${PART}.dump"
+
+          # Custom-format dump: restorable with pg_restore. The user/db names come
+          # from the container's own environment, so nothing is hardcoded here.
+          docker exec plane-db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$file"
+
+          # A dump that cannot be listed cannot be restored - check before going on.
+          entries=$(docker exec -i plane-db pg_restore -l < "$file" | grep -c '^[0-9]' || true)
+          if [ "${entries:-0}" -lt 50 ]; then
+            rm -f "$file"
+            echo "::error::The backup looks empty or corrupt (${entries:-0} objects) - refusing to continue."
+            exit 1
+          fi
+          echo "Backup OK: $entries objects, $(du -h "$file" | cut -f1), saved on the runner host at $file"
+
+          # Keep the 10 most recent backups.
+          ls -1t "$dir"/plane_*.dump 2>/dev/null | tail -n +11 | xargs -r rm -f
+
+      - name: Lock the demo accounts
+        if: inputs.part == 'lock-demo-accounts'
+        env:
+          DEACTIVATE: ${{ inputs.deactivate }}
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/helpers.sh"
+
+          docker inspect api > /dev/null || { echo "::error::No container named 'api' is running."; exit 1; }
+          docker exec api test -f plane/vj_startups/management/commands/lock_demo_accounts.py \
+            || { echo "::error::lock_demo_accounts is not in the running API image yet - wait for the Plane deploy to finish."; exit 1; }
+
+          flags=""
+          if [ "$APPLY" != "true" ]; then flags="--dry-run"; fi
+          if [ "$DEACTIVATE" = "true" ]; then flags="$flags --deactivate"; fi
+          echo "Mode: $([ "$APPLY" = "true" ] && echo APPLY || echo 'dry run - nothing is written')"
+          run_quiet '.' docker exec api python manage.py lock_demo_accounts $flags
+
+      - name: Give a wing access to every project in a workspace
+        if: inputs.part == 'wing-access'
+        env:
+          WING: ${{ inputs.wing }}
+          WORKSPACE: ${{ inputs.workspace }}
+          ROLE: ${{ inputs.role }}
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/helpers.sh"
+
+          if [ -z "$WING" ]; then
+            echo "::error::Fill in the 'wing' input (the wing's slug or exact name)."
+            exit 1
+          fi
+          for value in "$WING" "$WORKSPACE"; do
+            if ! printf '%s' "$value" | grep -Eq '^[A-Za-z0-9 ._-]+$'; then
+              echo "::error::wing and workspace may only contain letters, digits, spaces, dots, dashes and underscores."
+              exit 1
+            fi
+          done
+          docker inspect api > /dev/null || { echo "::error::No container named 'api' is running."; exit 1; }
+
+          flags=""
+          if [ "$APPLY" != "true" ]; then flags="--dry-run"; fi
+          echo "Mode: $([ "$APPLY" = "true" ] && echo APPLY || echo 'dry run - nothing is written')"
+          # Per-person "+ email -> project" lines are dropped; the summary is enough.
+          run_quiet '^(Wing |Workspace |Dry run|Granted|Nothing|  \(added)' \
+            docker exec api python manage.py grant_wing_project_access \
+              --wing "$WING" --workspace "$WORKSPACE" --role "$ROLE" $flags
 
       - name: Team members (wings, roles, headline, LinkedIn)
         if: inputs.part == 'team-members'
