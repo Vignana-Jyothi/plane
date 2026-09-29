@@ -1,4 +1,3 @@
-import os
 import requests
 from django.db import transaction
 from django.contrib.auth import get_user_model
@@ -18,6 +17,12 @@ from plane.vj_startups.models.startup import Startup, StartupMember
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 from plane.vj_startups.models.extension import VJProjectExtension, VJIssueExtension
 from plane.utils.exception_logger import log_exception
+from plane.vj_startups.config import (
+    MicroserviceNotConfigured,
+    is_institutional_email,
+    microservice_base_url,
+    public_site_url,
+)
 
 User = get_user_model()
 
@@ -264,11 +269,10 @@ class OnboardingService:
         never writes back to the Idea, and vice versa. Best-effort - a failure
         here must never break startup/project provisioning itself.
         """
-        base_url = (
-            os.environ.get("VJ_MICROSERVICE_URL")
-            or os.environ.get("NEXT_PUBLIC_MICROSERVICE_URL")
-            or "http://localhost:6220"
-        )
+        base_url = microservice_base_url()
+        if base_url is None:
+            log_exception(MicroserviceNotConfigured())
+            return
         try:
             res = requests.get(f"{base_url}/idea-api/ideas/{idea_id}", timeout=3)
             res.raise_for_status()
@@ -282,7 +286,7 @@ class OnboardingService:
 
         title = (idea.get("title") or f"Idea {idea_id}").strip()[:255]
         description = (idea.get("description") or "").strip()
-        public_url = f"https://vjstartup.com/ideas/{idea_id}"
+        public_url = f"{public_site_url()}/ideas/{idea_id}"
 
         description_html = "".join(
             [
@@ -504,10 +508,8 @@ class OnboardingService:
         if user.is_superuser or user.is_staff:
             return True
 
-        email_lower = user.email.lower()
-        
-        # 2. Institutional domain check (e.g. @vnrvjiet.in)
-        if email_lower.endswith("@vnrvjiet.in"):
+        # 2. Institutional domain check (VJ_INSTITUTIONAL_EMAIL_DOMAINS, default vnrvjiet.in)
+        if is_institutional_email(user.email):
             return True
 
         # 3. Check if explicitly invited to any Startup
