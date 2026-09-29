@@ -207,6 +207,7 @@ class DiagnoseMicroserviceProxyEndpoint(APIView):
         ALLOWED_PATHS = {
             "problems": "/admin-api/problems?page=1&limit=1",
             "echo": "/debug-echo-headers",
+            "actor": "/debug-actor",
         }
         target_path = ALLOWED_PATHS.get(request.query_params.get("target", "problems"), ALLOWED_PATHS["problems"])
         target_url = f"{base_url}{target_path}"
