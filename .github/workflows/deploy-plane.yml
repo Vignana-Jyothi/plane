@@ -155,7 +155,34 @@ jobs:
           # Expose the Plane Proxy on port 8888 (since port 80 is heavily used)
           sed -i 's/LISTEN_HTTP_PORT=80/LISTEN_HTTP_PORT=8888/g' .env
           sed -i 's/LISTEN_HTTPS_PORT=443/LISTEN_HTTPS_PORT=8443/g' .env
+
+          # Optional service passwords. The defaults in .env.example ("plane" for Postgres and
+          # RabbitMQ, "access-key"/"secret-key" for MinIO) are published in a public repository.
+          # Set the repository secrets POSTGRES_PASSWORD, RABBITMQ_PASSWORD, S3_ACCESS_KEY and
+          # S3_SECRET_KEY to replace them. Nothing changes while they are unset. Values are
+          # limited to URL-safe characters because the database password is embedded unencoded
+          # in DATABASE_URL and every value goes through sed.
+          apply_secret() { # apply_secret VARIABLE_NAME VALUE FILE...
+            local name="$1" value="$2"
+            shift 2
+            [ -n "$value" ] || return 0
+            if ! printf '%s' "$value" | grep -Eq '^[A-Za-z0-9._~-]{16,}$'; then
+              echo "::error::The secret for $name must be at least 16 characters, using only letters, digits, '.', '_', '~' and '-'."
+              exit 1
+            fi
+            for file in "$@"; do
+              sed -i "s|^${name}=.*|${name}=\"${value}\"|" "$file"
+            done
+          }
+          apply_secret POSTGRES_PASSWORD "$SVC_POSTGRES_PASSWORD" .env apps/api/.env
+          apply_secret RABBITMQ_PASSWORD "$SVC_RABBITMQ_PASSWORD" .env apps/api/.env
+          apply_secret AWS_ACCESS_KEY_ID "$SVC_S3_ACCESS_KEY" .env apps/api/.env
+          apply_secret AWS_SECRET_ACCESS_KEY "$SVC_S3_SECRET_KEY" .env apps/api/.env
         env:
+          SVC_POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          SVC_RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
+          SVC_S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
+          SVC_S3_SECRET_KEY: ${{ secrets.S3_SECRET_KEY }}
           DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
           VJ_MICROSERVICE_URL: ${{ vars.VJ_MICROSERVICE_URL }}
           PUBLIC_SITE_INTERNAL_TOKEN: ${{ secrets.PUBLIC_SITE_INTERNAL_TOKEN }}
@@ -164,14 +191,53 @@ jobs:
           VJ_PUBLIC_SITE_URL: ${{ vars.VJ_PUBLIC_SITE_URL }}
           VJ_INSTITUTIONAL_EMAIL_DOMAINS: ${{ vars.VJ_INSTITUTIONAL_EMAIL_DOMAINS }}
 
-      - name: Expose Database Port (Override)
+      - name: Align the running database and message broker with the password secrets
+        env:
+          SVC_POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          SVC_RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
         run: |
-          # Keep port 5434 exposed for the other vjstartup application
+          running() { [ "$(docker inspect -f '{{.State.Running}}' "$1" 2>/dev/null)" = "true" ]; }
+
+          if [ -n "$SVC_POSTGRES_PASSWORD" ]; then
+            if running plane-db; then
+              export NEWPW="$SVC_POSTGRES_PASSWORD"
+              printf '%s\n' "SELECT format('ALTER USER %I WITH PASSWORD %L', current_user, :'pw') \gexec" \
+                | docker exec -i -e NEWPW plane-db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -q -v "pw=$NEWPW"'
+              unset NEWPW
+              echo "Postgres password aligned with the secret."
+            else
+              echo "plane-db is not running yet - it will be created with the secret's password."
+            fi
+          fi
+
+          if [ -n "$SVC_RABBITMQ_PASSWORD" ]; then
+            if running plane-mq; then
+              export NEWPW="$SVC_RABBITMQ_PASSWORD"
+              docker exec -e NEWPW plane-mq sh -c 'rabbitmqctl change_password "$RABBITMQ_DEFAULT_USER" "$NEWPW"' > /dev/null
+              unset NEWPW
+              echo "RabbitMQ password aligned with the secret."
+            else
+              echo "plane-mq is not running yet - it will be created with the secret's password."
+            fi
+          fi
+
+      - name: Expose Database Port (Override)
+        env:
+          PLANE_DB_BIND: ${{ vars.PLANE_DB_BIND }}
+        run: |
+          bind=""
+          if [ -n "$PLANE_DB_BIND" ]; then
+            if ! printf '%s' "$PLANE_DB_BIND" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+              echo "::error::PLANE_DB_BIND must be an IPv4 address such as 10.100.0.15 (or unset)."
+              exit 1
+            fi
+            bind="${PLANE_DB_BIND}:"
+          fi
           cat <<EOF > docker-compose.override.yml
           services:
             plane-db:
               ports:
-                - "5434:5432"
+                - "${bind}5434:5432"
           EOF
           
       - name: Start Full Plane Stack
