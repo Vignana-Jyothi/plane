@@ -30,7 +30,9 @@ jobs:
           cp apps/live/.env.example apps/live/.env
           
           # Replace default URLs with the correct production domain and paths
-          DOMAIN="https://vjos.vjstartup.com"
+          # Set the PLANE_DOMAIN repository variable to change it; this default is
+          # only what was already deployed.
+          DOMAIN="${PLANE_DOMAIN:-https://vjos.vjstartup.com}"
           
           # Fix Web ENV
           cat <<EOF > apps/web/.env
@@ -96,6 +98,16 @@ jobs:
           echo "VJ_MICROSERVICE_URL=\"${VJ_MICROSERVICE_URL}\"" >> apps/api/.env
           echo "PUBLIC_SITE_INTERNAL_TOKEN=\"${PUBLIC_SITE_INTERNAL_TOKEN}\"" >> apps/api/.env
           echo "LIVE_SERVER_SECRET_KEY=\"${LIVE_SERVER_SECRET_KEY}\"" >> apps/api/.env
+
+          # Optional deployment settings - only written when the repository
+          # variable is set, so the application defaults apply otherwise (see
+          # apps/api/plane/vj_startups/config.py for what they are).
+          if [ -n "${VJ_PUBLIC_SITE_URL}" ]; then
+            echo "VJ_PUBLIC_SITE_URL=\"${VJ_PUBLIC_SITE_URL}\"" >> apps/api/.env
+          fi
+          if [ -n "${VJ_INSTITUTIONAL_EMAIL_DOMAINS}" ]; then
+            echo "VJ_INSTITUTIONAL_EMAIL_DOMAINS=\"${VJ_INSTITUTIONAL_EMAIL_DOMAINS}\"" >> apps/api/.env
+          fi
           # apps/live also needs this same value to authenticate with the
           # api service - apps/live/.env was only just created fresh from
           # its own .env.example above (still holding that file's literal
@@ -148,6 +160,9 @@ jobs:
           VJ_MICROSERVICE_URL: ${{ vars.VJ_MICROSERVICE_URL }}
           PUBLIC_SITE_INTERNAL_TOKEN: ${{ secrets.PUBLIC_SITE_INTERNAL_TOKEN }}
           LIVE_SERVER_SECRET_KEY: ${{ secrets.LIVE_SERVER_SECRET_KEY }}
+          PLANE_DOMAIN: ${{ vars.PLANE_DOMAIN }}
+          VJ_PUBLIC_SITE_URL: ${{ vars.VJ_PUBLIC_SITE_URL }}
+          VJ_INSTITUTIONAL_EMAIL_DOMAINS: ${{ vars.VJ_INSTITUTIONAL_EMAIL_DOMAINS }}
 
       - name: Expose Database Port (Override)
         run: |

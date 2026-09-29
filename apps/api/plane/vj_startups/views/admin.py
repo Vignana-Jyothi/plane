@@ -14,6 +14,12 @@ from plane.license.api.permissions.instance import InstanceAdminPermission
 from plane.authentication.session import BaseSessionAuthentication
 from plane.utils.exception_logger import log_exception
 from plane.bgtasks.vj_submission_verified_email_task import vj_submission_verified_email
+from plane.vj_startups.config import (
+    MicroserviceNotConfigured,
+    microservice_base_url,
+    public_site_url,
+    require_microservice_base_url,
+)
 
 class WingSerializer(serializers.ModelSerializer):
     class Meta:
@@ -263,7 +269,11 @@ class AdminStartupDetailEndpoint(generics.RetrieveUpdateDestroyAPIView):
         import requests
         instance = serializer.save()
         try:
-            base_url = os.environ.get("VJ_MICROSERVICE_URL") or os.environ.get("NEXT_PUBLIC_MICROSERVICE_URL") or "http://localhost:6220"
+            base_url = microservice_base_url()
+            if base_url is None:
+                # Best-effort sync: the startup itself is already saved. Say why it was skipped.
+                log_exception(MicroserviceNotConfigured())
+                return
             # VJ_MICROSERVICE_ADMIN_TOKEN was deprecated 2026-09-21 in favor of
             # the same X-Internal-Token/X-Acting-Admin-Email bridge every other
             # admin-proxy call in this file uses (see AdminMicroserviceProxyBase.
@@ -535,7 +545,7 @@ class AdminMicroserviceProxyBase(APIView):
     permission_classes = [InstanceAdminPermission]
 
     def get_microservice_base_url(self):
-        return os.environ.get("VJ_MICROSERVICE_URL") or os.environ.get("NEXT_PUBLIC_MICROSERVICE_URL") or "http://localhost:6220"
+        return require_microservice_base_url()
 
     def get_microservice_url(self, path):
         return f"{self.get_microservice_base_url()}/admin-api{path}"
@@ -644,7 +654,7 @@ class AdminMicroserviceProblemVerifyProxyEndpoint(AdminMicroserviceProxyBase):
                     title=data.get("title", ""),
                     added_by_name=data.get("addedByName", ""),
                     added_by_email=data["addedByEmail"],
-                    submission_url=f"https://vjstartup.com/problems/{pk}",
+                    submission_url=f"{public_site_url()}/problems/{pk}",
                 )
             return Response(data, status=res.status_code)
         except Exception as e:
@@ -671,7 +681,7 @@ class AdminMicroserviceIdeaVerifyProxyEndpoint(AdminMicroserviceProxyBase):
                     title=data.get("title", ""),
                     added_by_name=data.get("addedByName", ""),
                     added_by_email=data["addedByEmail"],
-                    submission_url=f"https://vjstartup.com/ideas/{pk}",
+                    submission_url=f"{public_site_url()}/ideas/{pk}",
                 )
             return Response(data, status=res.status_code)
         except Exception as e:
