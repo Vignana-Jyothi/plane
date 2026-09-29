@@ -90,7 +90,7 @@ export default function IdeasAuditPage() {
               </thead>
               <tbody className="divide-y divide-subtle">
                 {data?.ideas?.map((idea: any) => (
-                  <tr key={idea._id} className="transition-colors hover:bg-layer-2">
+                  <tr key={idea.id} className="transition-colors hover:bg-layer-2">
                     <td className="px-6 py-4">
                       <div className="font-semibold text-primary">{idea.title}</div>
                       {idea.description && (
