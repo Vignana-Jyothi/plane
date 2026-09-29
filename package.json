@@ -21,7 +21,7 @@
     "docker:start": "docker compose -f docker-compose-local.yml up -d",
     "docker:stop": "docker compose -f docker-compose-local.yml down",
     "docker:restart": "docker compose -f docker-compose-local.yml down && docker compose -f docker-compose-local.yml up -d",
-    "seed": "docker compose -f docker-compose-local.yml exec api python manage.py seed_vj_startups",
+    "seed": "docker compose -f docker-compose-local.yml exec api python manage.py seed_vj_startups --with-demo-data",
     "test-api": "docker compose -f docker-compose-test.yml up --build --abort-on-container-exit --exit-code-from api-tests",
     "test-api-teardown": "docker compose -f docker-compose-test.yml down -v",
     "prepare": "husky"

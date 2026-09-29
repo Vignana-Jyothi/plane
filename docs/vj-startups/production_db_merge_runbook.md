@@ -108,10 +108,12 @@ residue.
 If this step fails with `relation "users" does not exist`, Step 1 didn't run or ran
 against a different database — stop and check `DATABASE_URL` before retrying.
 
-## Step 3 — Seed the initial Wings + workspace structure
+## Step 3 — Seed the initial Wings and badges
 
-Only needed on a genuinely fresh instance (skip if wings/workspace already exist from
-a prior deploy):
+Creates the six wings and the badge catalogue. It is idempotent and never overwrites
+existing rows, so it is safe on every deploy (the deploy workflow runs it). It creates
+**no** users, startups or events - the fake demo accounts need `--with-demo-data`, which
+is for local development only and is refused when `DEBUG` is off:
 
 ```bash
 cd apps/api

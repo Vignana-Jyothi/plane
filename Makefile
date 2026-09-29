@@ -57,4 +57,4 @@ test-api-teardown:
 	docker compose -f docker-compose-test.yml down -v
 
 seed:
-	docker compose -f docker-compose-local.yml exec api python manage.py seed_vj_startups
+	docker compose -f docker-compose-local.yml exec api python manage.py seed_vj_startups --with-demo-data

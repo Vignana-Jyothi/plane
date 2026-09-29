@@ -173,8 +173,13 @@ jobs:
         run: |
           docker compose run --rm api python manage.py migrate
           
-      - name: Seed VJ Startups Data
+      - name: Seed VJ Startups reference data (wings, badges)
         run: |
+          # Reference data only, idempotent, never overwrites existing rows.
+          # DO NOT add --with-demo-data here: it creates fake accounts (one a
+          # superuser) and is refused unless DEBUG is on. It used to run on every
+          # deploy and reset those accounts to a shared password - see
+          # lock_demo_accounts for cleaning up instances that already have them.
           docker compose run --rm api python manage.py seed_vj_startups
 
       - name: Backfill Cycles/Modules/Views on existing projects
