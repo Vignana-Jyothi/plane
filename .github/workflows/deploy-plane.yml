@@ -93,7 +93,7 @@ jobs:
           # variable was unset, which would send every admin-proxy request
           # to the wrong host instead of failing loudly.
           if [ -z "${VJ_MICROSERVICE_URL}" ]; then
-            echo "::warning::VJ_MICROSERVICE_URL repo variable is not set - the admin proxy to backend 2 (Problems/Ideas verify, user management, startup project provisioning) will not work. Set it to backend 2's own base URL (e.g. https://api.vjstartups.com)."
+            echo "::warning::VJ_MICROSERVICE_URL repo variable is not set - the admin proxy to backend 2 (Problems/Ideas verify, user management, startup project provisioning) will not work. Set it to backend 2's base URL as the API container reaches it (currently http://host.docker.internal:6220, since backend 2 for this machine runs on the same host). See docs/vj-startups/deployment_topology.md."
           fi
           echo "VJ_MICROSERVICE_URL=\"${VJ_MICROSERVICE_URL}\"" >> apps/api/.env
           echo "PUBLIC_SITE_INTERNAL_TOKEN=\"${PUBLIC_SITE_INTERNAL_TOKEN}\"" >> apps/api/.env
