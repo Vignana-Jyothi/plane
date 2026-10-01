@@ -57,6 +57,34 @@ class TestWingRoles:
 
 
 @pytest.mark.unit
+class TestPlanWorkspaceMembership:
+    def test_a_new_person_is_added_with_the_requested_role(self):
+        assert config.plan_workspace_membership(None, False, 20) == ("add", 20)
+        assert config.plan_workspace_membership(None, True, 15) == ("add", 15)
+
+    def test_a_lower_active_role_is_raised(self):
+        assert config.plan_workspace_membership(15, True, 20) == ("raise", 20)
+        assert config.plan_workspace_membership(5, True, 15) == ("raise", 15)
+
+    def test_the_same_or_a_higher_active_role_is_left_alone(self):
+        assert config.plan_workspace_membership(20, True, 20) == ("keep", 20)
+        assert config.plan_workspace_membership(20, True, 15) == ("keep", 20)
+        assert config.plan_workspace_membership(15, True, 5) == ("keep", 15)
+
+    def test_a_deactivated_membership_is_reactivated_and_never_lowered(self):
+        assert config.plan_workspace_membership(15, False, 20) == ("reactivate", 20)
+        assert config.plan_workspace_membership(20, False, 15) == ("reactivate", 20)
+        assert config.plan_workspace_membership(5, False, 5) == ("reactivate", 5)
+
+    def test_the_result_is_always_the_higher_of_the_current_and_requested_role(self):
+        for current in (5, 15, 20):
+            for requested in (5, 15, 20):
+                for active in (True, False):
+                    _, role = config.plan_workspace_membership(current, active, requested)
+                    assert role == max(current, requested)
+
+
+@pytest.mark.unit
 class TestPublicSiteUrl:
     def test_defaults_to_the_host_that_resolves(self):
         assert config.public_site_url() == "https://www.vjstartup.com"
