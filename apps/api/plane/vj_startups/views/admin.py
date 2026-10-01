@@ -297,13 +297,13 @@ class AdminStartupDetailEndpoint(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         from plane.vj_startups.models.extension import VJProjectExtension
-        # Find associated project and delete it first
-        try:
-            ext = VJProjectExtension.objects.get(startup=instance)
+        # Delete every project linked to this startup first. The link is a ForeignKey, so a
+        # startup can have more than one project (provisioning used to create a new project on
+        # every run). The old .get() raised MultipleObjectsReturned, which the view turned into
+        # a 500, and the startup could not be deleted at all.
+        for ext in VJProjectExtension.objects.filter(startup=instance).select_related("project"):
             if ext.project:
                 ext.project.delete()
-        except VJProjectExtension.DoesNotExist:
-            pass
         # Now delete the startup
         instance.delete()
 
