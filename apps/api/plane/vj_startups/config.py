@@ -73,6 +73,27 @@ def workspace_role_for_wing(project_role, wing_slug):
     return ROLE_MEMBER
 
 
+def plan_workspace_membership(current_role, is_active, requested_role):
+    """
+    What granting `requested_role` in a workspace should do, given the person's current
+    membership (current_role is None when they have none). Returns (action, resulting_role):
+
+    - "add":        not a member yet -> becomes a member with the requested role
+    - "reactivate": was a member but deactivated -> active again, never below what they had
+    - "raise":      active with a lower role -> raised to the requested role
+    - "keep":       active with the same or a higher role -> left exactly as it is
+
+    Roles only ever go up here; lowering one is done by hand in Plane.
+    """
+    if current_role is None:
+        return "add", requested_role
+    if not is_active:
+        return "reactivate", max(current_role, requested_role)
+    if current_role < requested_role:
+        return "raise", requested_role
+    return "keep", current_role
+
+
 def is_institutional_email(email):
     email = (email or "").strip().lower()
     return any(email.endswith("@" + domain) for domain in institutional_email_domains())
