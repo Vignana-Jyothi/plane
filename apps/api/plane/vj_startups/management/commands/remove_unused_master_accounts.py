@@ -32,30 +32,48 @@ CLEARED_TABLES = {"vj_wings"}
 AUDIT_COLUMNS = {"created_by_id", "updated_by_id"}
 
 
+UNKNOWN = object()
+
+
+def referenced_value(user, column):
+    """The account's value in the users column a foreign key points at.
+
+    Usually that is id, but a table may reference another unique column such as email. Returns
+    UNKNOWN if the column is not an attribute of the account.
+    """
+    return getattr(user, column, UNKNOWN)
+
+
 def rows_pointing_at(user):
     """{table: row count} for every database foreign key that points at this account.
 
     Read from the database catalogue, so tables that are not Django models (the public site's
-    tables share this database) are covered too.
+    tables share this database) are covered too. A foreign key to a column whose value cannot be
+    read is counted as one row, so the account is kept rather than deleted blindly.
     """
     found = {}
     with connection.cursor() as cursor:
         cursor.execute(
             """
-            SELECT c.conrelid::regclass::text, a.attname
+            SELECT c.conrelid::regclass::text, a.attname, r.attname
             FROM pg_constraint c
             JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = c.conkey[1]
+            JOIN pg_attribute r ON r.attrelid = c.confrelid AND r.attnum = c.confkey[1]
             WHERE c.contype = 'f'
               AND c.confrelid = %s::regclass
               AND array_length(c.conkey, 1) = 1
             """,
             [User._meta.db_table],
         )
-        for table, column in cursor.fetchall():
+        for table, column, referenced in cursor.fetchall():
             if column in AUDIT_COLUMNS:
                 continue
-            cursor.execute(f'SELECT count(*) FROM {table} WHERE "{column}" = %s', [user.pk])
-            count = cursor.fetchone()[0]
+            value = referenced_value(user, referenced)
+            if value is UNKNOWN:
+                count = 1
+            else:
+                cursor.execute(f'SELECT count(*) FROM {table} WHERE "{column}" = %s', [value])
+                count = cursor.fetchone()[0]
             if count:
                 table = table.strip('"')
                 found[table] = found.get(table, 0) + count

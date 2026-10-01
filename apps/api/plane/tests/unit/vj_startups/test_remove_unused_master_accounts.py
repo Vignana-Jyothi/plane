@@ -33,6 +33,21 @@ def reasons(user, pointing=None, instance_admin=False, owns_workspace=False):
 
 
 @pytest.mark.unit
+class TestReferencedValue:
+    def test_a_foreign_key_to_email_is_compared_with_the_email(self):
+        user = account(email="someone@example.com", id="the-id")
+
+        assert cmd.referenced_value(user, "email") == "someone@example.com"
+        assert cmd.referenced_value(user, "id") == "the-id"
+
+    def test_a_column_that_is_not_an_attribute_is_unknown(self):
+        class Plain:
+            pass
+
+        assert cmd.referenced_value(Plain(), "no_such_column") is cmd.UNKNOWN
+
+
+@pytest.mark.unit
 class TestReasonsToKeep:
     def test_an_unused_placeholder_account_may_be_removed(self):
         assert reasons(account()) == []
