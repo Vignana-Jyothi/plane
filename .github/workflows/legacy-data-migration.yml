@@ -8,8 +8,9 @@ name: Data operations (manual)
 #
 # Parts: team-members, problems-and-ideas (legacy data import),
 # lock-demo-accounts (neutralise the fixture accounts old deploys created),
-# wing-access (give a wing's members access to every project in a workspace) and
-# instance-admin (let an existing account open Plane's /god-mode/ panel).
+# wing-access (give a wing's members access to every project in a workspace),
+# instance-admin (let an existing account open Plane's /god-mode/ panel) and
+# workspace-member (give an existing account a role in a workspace).
 #
 # This repository is PUBLIC, so run logs are public. Every email address in the
 # output is masked and per-person lines are suppressed - only counts and
@@ -28,6 +29,7 @@ on:
           - lock-demo-accounts
           - wing-access
           - instance-admin
+          - workspace-member
       apply:
         description: Write to the database (leave unticked for a dry run that writes nothing)
         type: boolean
@@ -37,12 +39,12 @@ on:
         type: string
         required: false
       workspace:
-        description: "wing-access only: workspace slug"
+        description: "wing-access and workspace-member: workspace slug"
         type: string
         required: false
         default: vj-startups
       role:
-        description: "wing-access only: project role to grant (15 = Member, 5 = Guest, 20 = Admin)"
+        description: "wing-access: project role to grant; workspace-member: workspace role (15 = Member, 5 = Guest, 20 = Admin)"
         type: choice
         required: false
         default: "15"
@@ -55,7 +57,7 @@ on:
         type: boolean
         default: false
       email:
-        description: "instance-admin only: the email of an account that has already signed in to Plane once"
+        description: "instance-admin and workspace-member: the email of an account that has already signed in to Plane once"
         type: string
         required: false
 
@@ -221,6 +223,41 @@ jobs:
             # Refuses (with a clear message) if the account is missing or already an admin.
             run_quiet '.' docker exec api python manage.py create_instance_admin "$email"
           fi
+
+      # Gives an existing account a role in a workspace (default: vj-startups): adds it, re-activates
+      # a deactivated membership, or raises a lower role. Never lowers a role. Being an Instance
+      # Admin does not put anyone inside a workspace, which is what this is for.
+      - name: Give an account a role in a workspace
+        if: inputs.part == 'workspace-member'
+        env:
+          MEMBER_EMAIL: ${{ inputs.email }}
+          WORKSPACE: ${{ inputs.workspace }}
+          ROLE: ${{ inputs.role }}
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/helpers.sh"
+
+          email=$(printf '%s' "$MEMBER_EMAIL" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+          if ! printf '%s' "$email" | grep -Eq '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'; then
+            echo "::error::Fill in the 'email' input with a valid email address."
+            exit 1
+          fi
+          if ! printf '%s' "$WORKSPACE" | grep -Eq '^[A-Za-z0-9._-]+$'; then
+            echo "::error::workspace may only contain letters, digits, dots, dashes and underscores."
+            exit 1
+          fi
+          docker inspect api > /dev/null || { echo "::error::No container named 'api' is running."; exit 1; }
+          docker exec api test -f plane/vj_startups/management/commands/grant_workspace_role.py \
+            || { echo "::error::grant_workspace_role is not in the running API image yet - wait for the Plane deploy to finish."; exit 1; }
+
+          flags=""
+          if [ "$APPLY" != "true" ]; then flags="--dry-run"; fi
+          echo "Mode: $([ "$APPLY" = "true" ] && echo APPLY || echo 'dry run - nothing is written')"
+          # The address is not printed (this repository's logs are public); the command prints only
+          # what it did, and a failure shows the masked tail of its output.
+          run_quiet '^(Would apply|Applied|Nothing to do|Dry run)' \
+            docker exec api python manage.py grant_workspace_role \
+              --email "$email" --role "$ROLE" --workspace "$WORKSPACE" $flags
 
       - name: Team members (wings, roles, headline, LinkedIn)
         if: inputs.part == 'team-members'
