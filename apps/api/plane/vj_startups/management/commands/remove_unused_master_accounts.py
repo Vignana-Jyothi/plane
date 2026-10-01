@@ -1,117 +1,20 @@
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
-from django.db import connection, transaction
+from django.db import IntegrityError, transaction
 from django.utils.text import slugify
 
-from plane.db.models import Workspace, WorkspaceMemberInvite
-from plane.license.models import InstanceAdmin
+from plane.db.models import WorkspaceMemberInvite
 from plane.vj_startups.management.commands.import_team_members import parse_rows
 
 User = get_user_model()
 
-# Tables that may hold rows belonging to the account itself (its memberships, profile and
-# preferences). They go with the account. Any row in any other table that points at the account
-# makes the command keep it, so it can never remove somebody's work along with the account.
-OWN_TABLES = {
-    "accounts",
-    "profiles",
-    "workspace_members",
-    "project_members",
-    "workspace_user_properties",
-    "workspace_user_links",
-    "workspace_home_preferences",
-    "workspace_user_preferences",
-    "vj_organization_member_profiles",
-    "vj_member_badges",
-    "vj_contribution_snapshots",
-}
-# Rows that only lose their link to the account (the foreign key is SET NULL): the wing keeps
-# existing and gets its master back the next time import_team_members runs.
-CLEARED_TABLES = {"vj_wings"}
-# Every table has these two, set to NULL (not deleted) when the account goes.
-AUDIT_COLUMNS = {"created_by_id", "updated_by_id"}
-
-
-UNKNOWN = object()
-
-
-def referenced_value(user, column):
-    """The account's value in the users column a foreign key points at.
-
-    Usually that is id, but a table may reference another unique column such as email. Returns
-    UNKNOWN if the column is not an attribute of the account.
-    """
-    return getattr(user, column, UNKNOWN)
-
-
-def rows_pointing_at(user):
-    """{table: row count} for every database foreign key that points at this account.
-
-    Read from the database catalogue, so tables that are not Django models (the public site's
-    tables share this database) are covered too. A foreign key to a column whose value cannot be
-    read is counted as one row, so the account is kept rather than deleted blindly.
-    """
-    found = {}
-    with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            SELECT c.conrelid::regclass::text, a.attname, r.attname
-            FROM pg_constraint c
-            JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = c.conkey[1]
-            JOIN pg_attribute r ON r.attrelid = c.confrelid AND r.attnum = c.confkey[1]
-            WHERE c.contype = 'f'
-              AND c.confrelid = %s::regclass
-              AND array_length(c.conkey, 1) = 1
-            """,
-            [User._meta.db_table],
-        )
-        for table, column, referenced in cursor.fetchall():
-            if column in AUDIT_COLUMNS:
-                continue
-            value = referenced_value(user, referenced)
-            if value is UNKNOWN:
-                count = 1
-            else:
-                cursor.execute(f'SELECT count(*) FROM {table} WHERE "{column}" = %s', [value])
-                count = cursor.fetchone()[0]
-            if count:
-                table = table.strip('"')
-                found[table] = found.get(table, 0) + count
-    return found
-
-
-def reasons_to_keep(user):
-    """Why this account must not be deleted (empty list = it is an unused placeholder)."""
-    reasons = []
-    if user.has_usable_password():
-        reasons.append("it has a password")
-    if user.last_login is not None or user.last_login_time is not None:
-        reasons.append("it has signed in before")
-    if user.is_superuser or user.is_staff:
-        reasons.append("it is staff/superuser")
-    if InstanceAdmin.objects.filter(user=user).exists():
-        reasons.append("it is an Instance Admin")
-    if Workspace.objects.filter(owner=user).exists():
-        reasons.append("it owns a workspace")
-    foreign = {
-        table: count
-        for table, count in rows_pointing_at(user).items()
-        if table not in OWN_TABLES and table not in CLEARED_TABLES
-    }
-    if foreign:
-        reasons.append("other data points at it: " + ", ".join(f"{t} ({n})" for t, n in sorted(foreign.items())))
-    return reasons
-
 
 class Command(BaseCommand):
     help = (
-        "Delete the Plane account of the wing master of each named wing, but only if the account was "
-        "created for them (by import_team_members) and they never signed in to it and it has no "
-        "password. The point is to let them sign up themselves with a password of their own. The "
-        "people are looked up in the team sheet, so nobody outside the named wings' master rows can "
-        "be affected. An account that has signed in, has a password, is staff/an Instance Admin/a "
-        "workspace owner, or has anything but its own memberships pointing at it is kept. Pending "
-        "workspace invitations are kept: they are tied to the email address. Use --dry-run first."
+        "Delete the Plane account of the wing master of each named wing so they can sign up again with "
+        "a password of their own. The people come from the team sheet. An account that already has a "
+        "password or has signed in is kept. Pending workspace invitations are kept: they are tied to the "
+        "email address, so the person sees them as soon as they sign up. Use --dry-run first."
     )
 
     def add_arguments(self, parser):
@@ -120,7 +23,7 @@ class Command(BaseCommand):
             "--wing",
             action="append",
             required=True,
-            help="Wing name or slug whose master's unused account is removed. Repeat for several wings.",
+            help="Wing name or slug whose master's account is removed. Repeat for several wings.",
         )
         parser.add_argument("--dry-run", action="store_true", help="Show what would happen without writing.")
 
@@ -150,23 +53,28 @@ class Command(BaseCommand):
                 if user is None:
                     self.stdout.write(f"  {slug}: no account exists - nothing to remove")
                     continue
-                reasons = reasons_to_keep(user)
-                if reasons:
+                if user.has_usable_password() or user.last_login is not None or user.last_login_time is not None:
                     kept += 1
-                    self.stdout.write(f"  {slug}: kept - " + "; ".join(reasons))
+                    self.stdout.write(f"  {slug}: kept - the person has already signed up or signed in")
                     continue
 
                 invites = WorkspaceMemberInvite.objects.filter(email__iexact=email, accepted=False).count()
+                if not dry_run:
+                    try:
+                        with transaction.atomic():
+                            user.delete()
+                    except IntegrityError:
+                        # The database refuses if something (e.g. a problem or idea) still points at it.
+                        kept += 1
+                        self.stdout.write(f"  {slug}: kept - other data is attached to the account")
+                        continue
+                removed += 1
                 self.stdout.write(
-                    f"  {slug}: unused account ({'would be ' if dry_run else ''}removed); "
+                    f"  {slug}: account {'would be ' if dry_run else ''}removed; "
                     f"pending workspace invitations kept: {invites}"
                 )
-                if not dry_run:
-                    with transaction.atomic():
-                        user.delete()
-                removed += 1
 
         verb = "Would remove" if dry_run else "Removed"
-        self.stdout.write(self.style.SUCCESS(f"{verb} {removed} unused account(s); kept {kept}."))
+        self.stdout.write(self.style.SUCCESS(f"{verb} {removed} account(s); kept {kept}."))
         if dry_run:
             self.stdout.write(self.style.WARNING("Dry run - no changes written."))
