@@ -9,6 +9,19 @@ from plane.vj_startups.management.commands.import_team_members import parse_rows
 User = get_user_model()
 
 
+def signed_up(user):
+    """Why this account is really in use (empty string if it is just an unused placeholder).
+
+    import_team_members gives the accounts it creates a random password that nobody knows and
+    flags it is_password_autoset, so a usable password only counts when the person set it.
+    """
+    if user.has_usable_password() and not user.is_password_autoset:
+        return "has set a password"
+    if user.last_login is not None or user.last_login_time is not None:
+        return "has signed in"
+    return ""
+
+
 class Command(BaseCommand):
     help = (
         "Delete the Plane account of the wing master of each named wing so they can sign up again with "
@@ -53,9 +66,10 @@ class Command(BaseCommand):
                 if user is None:
                     self.stdout.write(f"  {slug}: no account exists - nothing to remove")
                     continue
-                if user.has_usable_password() or user.last_login is not None or user.last_login_time is not None:
+                used = signed_up(user)
+                if used:
                     kept += 1
-                    self.stdout.write(f"  {slug}: kept - the person has already signed up or signed in")
+                    self.stdout.write(f"  {slug}: kept - the person {used}")
                     continue
 
                 invites = WorkspaceMemberInvite.objects.filter(email__iexact=email, accepted=False).count()
