@@ -10,7 +10,9 @@ name: Data operations (manual)
 # lock-demo-accounts (neutralise the fixture accounts old deploys created),
 # wing-access (give a wing's members access to every project in a workspace),
 # instance-admin (let an existing account open Plane's /god-mode/ panel) and
-# workspace-member (give an existing account a role in a workspace).
+# workspace-member (give an existing account a role in a workspace) and
+# remove-unused-masters (one-off: delete the never-used placeholder accounts of the Ignition and
+# Fuel wing masters so they can sign up with their own password).
 #
 # This repository is PUBLIC, so run logs are public. Every email address in the
 # output is masked and per-person lines are suppressed - only counts and
@@ -30,6 +32,7 @@ on:
           - wing-access
           - instance-admin
           - workspace-member
+          - remove-unused-masters
       apply:
         description: Write to the database (leave unticked for a dry run that writes nothing)
         type: boolean
@@ -258,6 +261,40 @@ jobs:
           run_quiet '^(Would apply|Applied|Nothing to do|Dry run)' \
             docker exec api python manage.py grant_workspace_role \
               --email "$email" --role "$ROLE" --workspace "$WORKSPACE" $flags
+
+      # One-off. import_team_members created accounts for the Ignition and Fuel wing masters before
+      # they had signed up, and those accounts have no password and no other sign-in method, so
+      # the people cannot get in (and cannot sign up, because the account exists). This deletes
+      # exactly those two placeholders. There is deliberately no email input: the people come from
+      # the team sheet's master rows for these two wings, and the command keeps any account that
+      # has a password, has signed in, or has anything else attached. Afterwards each person signs
+      # up with their own password, sees their pending workspace invitation, and a re-run of
+      # team-members (apply) gives them their wing roles.
+      - name: Remove the unused Ignition and Fuel wing master accounts
+        if: inputs.part == 'remove-unused-masters'
+        env:
+          TEAM_SHEET_CSV: ${{ secrets.TEAM_SHEET_CSV }}
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/helpers.sh"
+
+          if [ -z "${TEAM_SHEET_CSV:-}" ]; then
+            echo "::error::The TEAM_SHEET_CSV secret is not set."
+            exit 1
+          fi
+          docker inspect api > /dev/null || { echo "::error::No container named 'api' is running."; exit 1; }
+          docker exec api test -f plane/vj_startups/management/commands/remove_unused_master_accounts.py \
+            || { echo "::error::remove_unused_master_accounts is not in the running API image yet - wait for the Plane deploy to finish."; exit 1; }
+
+          trap 'docker exec api rm -f /tmp/team.csv' EXIT
+          printf '%s\n' "$TEAM_SHEET_CSV" | docker exec -i api sh -c 'cat > /tmp/team.csv'
+
+          flags=""
+          if [ "$APPLY" != "true" ]; then flags="--dry-run"; fi
+          echo "Mode: $([ "$APPLY" = "true" ] && echo APPLY || echo 'dry run - nothing is written')"
+          run_quiet '^(  |Would remove|Removed|Dry run)' \
+            docker exec api python manage.py remove_unused_master_accounts \
+              --csv-file /tmp/team.csv --wing ignition --wing fuel $flags
 
       - name: Team members (wings, roles, headline, LinkedIn)
         if: inputs.part == 'team-members'
