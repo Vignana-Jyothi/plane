@@ -266,10 +266,10 @@ jobs:
       # they had signed up, and those accounts have no password and no other sign-in method, so
       # the people cannot get in (and cannot sign up, because the account exists). This deletes
       # exactly those two placeholders. There is deliberately no email input: the people come from
-      # the team sheet's master rows for these two wings, and the command keeps any account that
-      # has a password, has signed in, or has anything else attached. Afterwards each person signs
-      # up with their own password, sees their pending workspace invitation, and a re-run of
-      # team-members (apply) gives them their wing roles.
+      # the team sheet's master rows for these two wings, and an account that already has a
+      # password or has signed in is kept. Their workspace invitations stay (they are tied to the
+      # email). Afterwards each person signs up with their own password, sees the invitation, and
+      # a re-run of team-members (apply) gives them their wing roles.
       - name: Remove the unused Ignition and Fuel wing master accounts
         if: inputs.part == 'remove-unused-masters'
         env:

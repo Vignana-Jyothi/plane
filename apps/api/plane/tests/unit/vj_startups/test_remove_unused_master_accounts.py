@@ -2,66 +2,103 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+from io import StringIO
 from unittest.mock import MagicMock, patch
 
 import pytest
+from django.core.management import call_command
 
 from plane.vj_startups.management.commands import remove_unused_master_accounts as cmd
 
+ROWS = [
+    {"wing": "Ignition", "is_master": True, "email": "ignition.master@example.com"},
+    {"wing": "Fuel", "is_master": True, "email": "fuel.master@example.com"},
+    {"wing": "Echo", "is_master": True, "email": "echo.master@example.com"},
+    {"wing": "Ignition", "is_master": False, "email": "ignition.member@example.com"},
+]
 
-def account(**overrides):
+
+def account(password=False, last_login=None):
     user = MagicMock()
-    user.has_usable_password.return_value = False
-    user.last_login = None
+    user.has_usable_password.return_value = password
+    user.last_login = last_login
     user.last_login_time = None
-    user.is_superuser = False
-    user.is_staff = False
-    for key, value in overrides.items():
-        setattr(user, key, value)
     return user
 
 
-def reasons(user, pointing=None, instance_admin=False, owns_workspace=False):
+def run(users, *wings, dry_run=False, delete_error=None):
+    """Run the command for `wings`; `users` maps email -> account."""
+    if delete_error:
+        for user in users.values():
+            user.delete.side_effect = delete_error
+    out = StringIO()
     with (
-        patch.object(cmd.InstanceAdmin, "objects") as admins,
-        patch.object(cmd.Workspace, "objects") as workspaces,
-        patch.object(cmd, "rows_pointing_at", return_value=pointing or {}),
+        patch.object(cmd, "parse_rows", return_value=ROWS),
+        patch.object(cmd, "open", create=True),
+        patch.object(cmd, "transaction"),
+        patch.object(cmd, "User") as user_model,
+        patch.object(cmd, "WorkspaceMemberInvite") as invites,
     ):
-        admins.filter.return_value.exists.return_value = instance_admin
-        workspaces.filter.return_value.exists.return_value = owns_workspace
-        return cmd.reasons_to_keep(user)
+        user_model.objects.filter.side_effect = lambda email__iexact: MagicMock(
+            first=lambda: users.get(email__iexact)
+        )
+        invites.objects.filter.return_value.count.return_value = 1
+        args = ["--csv-file", "team.csv"]
+        for wing in wings:
+            args += ["--wing", wing]
+        if dry_run:
+            args.append("--dry-run")
+        call_command("remove_unused_master_accounts", *args, stdout=out)
+    return out.getvalue()
 
 
 @pytest.mark.unit
-class TestReasonsToKeep:
-    def test_an_unused_placeholder_account_may_be_removed(self):
-        assert reasons(account()) == []
+class TestRemoveUnusedMasterAccounts:
+    def test_deletes_the_unused_account_of_each_named_wings_master(self):
+        users = {
+            "ignition.master@example.com": account(),
+            "fuel.master@example.com": account(),
+            "echo.master@example.com": account(),
+        }
 
-    def test_its_own_memberships_and_profile_do_not_block_removal(self):
-        pointing = {"workspace_members": 1, "project_members": 1, "profiles": 1, "vj_organization_member_profiles": 1}
+        out = run(users, "ignition", "fuel")
 
-        assert reasons(account(), pointing) == []
+        users["ignition.master@example.com"].delete.assert_called_once()
+        users["fuel.master@example.com"].delete.assert_called_once()
+        users["echo.master@example.com"].delete.assert_not_called()
+        assert "Removed 2 account(s); kept 0." in out
+        assert "@" not in out
 
-    def test_a_wing_that_names_it_as_master_does_not_block_removal(self):
-        assert reasons(account(), {"vj_wings": 1}) == []
+    def test_a_dry_run_deletes_nothing(self):
+        users = {"ignition.master@example.com": account()}
 
-    def test_an_account_with_a_password_is_kept(self):
-        user = account()
-        user.has_usable_password.return_value = True
+        out = run(users, "ignition", dry_run=True)
 
-        assert "it has a password" in reasons(user)
+        users["ignition.master@example.com"].delete.assert_not_called()
+        assert "Would remove 1 account(s)" in out
 
-    def test_an_account_that_has_signed_in_is_kept(self):
-        assert "it has signed in before" in reasons(account(last_login_time="2026-10-01"))
+    def test_other_members_of_the_wing_are_never_touched(self):
+        users = {"ignition.member@example.com": account(), "ignition.master@example.com": account()}
 
-    def test_staff_instance_admins_and_workspace_owners_are_kept(self):
-        assert "it is staff/superuser" in reasons(account(is_staff=True))
-        assert "it is an Instance Admin" in reasons(account(), instance_admin=True)
-        assert "it owns a workspace" in reasons(account(), owns_workspace=True)
+        run(users, "ignition")
 
-    def test_an_account_with_someone_elses_data_attached_is_kept(self):
-        found = reasons(account(), {"problems": 3, "workspace_members": 1})
+        users["ignition.member@example.com"].delete.assert_not_called()
 
-        assert len(found) == 1
-        assert "problems (3)" in found[0]
-        assert "workspace_members" not in found[0]
+    def test_an_account_that_has_signed_up_is_kept(self):
+        users = {
+            "ignition.master@example.com": account(password=True),
+            "fuel.master@example.com": account(last_login="x"),
+        }
+
+        out = run(users, "ignition", "fuel")
+
+        users["ignition.master@example.com"].delete.assert_not_called()
+        users["fuel.master@example.com"].delete.assert_not_called()
+        assert "Removed 0 account(s); kept 2." in out
+
+    def test_an_account_the_database_refuses_to_delete_is_kept(self):
+        users = {"ignition.master@example.com": account()}
+
+        out = run(users, "ignition", delete_error=cmd.IntegrityError())
+
+        assert "kept 1" in out
