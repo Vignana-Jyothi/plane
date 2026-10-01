@@ -18,9 +18,11 @@ ROWS = [
 ]
 
 
-def account(password=False, last_login=None):
+def account(own_password=False, last_login=None):
+    """A placeholder as import_team_members creates it: a random password nobody knows (autoset)."""
     user = MagicMock()
-    user.has_usable_password.return_value = password
+    user.has_usable_password.return_value = True
+    user.is_password_autoset = not own_password
     user.last_login = last_login
     user.last_login_time = None
     return user
@@ -84,9 +86,18 @@ class TestRemoveUnusedMasterAccounts:
 
         users["ignition.member@example.com"].delete.assert_not_called()
 
+    def test_the_random_password_the_import_sets_does_not_count_as_signed_up(self):
+        users = {"fuel.master@example.com": account()}
+
+        assert users["fuel.master@example.com"].has_usable_password()
+        out = run(users, "fuel")
+
+        users["fuel.master@example.com"].delete.assert_called_once()
+        assert "Removed 1 account(s); kept 0." in out
+
     def test_an_account_that_has_signed_up_is_kept(self):
         users = {
-            "ignition.master@example.com": account(password=True),
+            "ignition.master@example.com": account(own_password=True),
             "fuel.master@example.com": account(last_login="x"),
         }
 
