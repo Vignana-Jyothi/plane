@@ -7,7 +7,9 @@ from django.db import transaction
 from django.utils.text import slugify
 
 from plane.db.models import User
+from plane.vj_startups.config import ROLE_ADMIN, workspace_admin_wing_slugs
 from plane.vj_startups.models.organization import OrganizationMemberProfile, Wing
+from plane.vj_startups.services.onboarding_service import OnboardingService
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 TITLE_RE = re.compile(r"^(mr|mrs|ms|miss|dr)\b\.?\s*", re.IGNORECASE)
@@ -131,7 +133,15 @@ class Command(BaseCommand):
             raise CommandError(f"Cannot read CSV: {e}")
 
         wings = {w.slug: w for w in Wing.objects.all()}
-        stats = {"updated": 0, "created": 0, "no_email": [], "no_account": [], "bad_wing": [], "dupes": 0}
+        stats = {
+            "updated": 0,
+            "created": 0,
+            "masters": 0,
+            "no_email": [],
+            "no_account": [],
+            "bad_wing": [],
+            "dupes": 0,
+        }
         seen = set()
 
         for row in rows:
@@ -156,6 +166,8 @@ class Command(BaseCommand):
             self.stdout.write(f"  {action}: {row['email']} -> {wing.name}, {row['role']}")
             if dry_run:
                 stats["created" if user is None else "updated"] += 1
+                if row["is_master"]:
+                    stats["masters"] += 1
                 continue
 
             with transaction.atomic():
@@ -193,10 +205,23 @@ class Command(BaseCommand):
                         self.stdout.write(
                             self.style.WARNING(f"  note: {wing.name} already has a wing master; left as is")
                         )
+                    # Every wing master administers their wing's project; the master of a wing
+                    # listed in VJ_WORKSPACE_ADMIN_WINGS (default: vision) is also a workspace
+                    # Admin. The profile save above only adds plain members, so raise it here.
+                    OnboardingService.onboard_user_to_wing(user, wing, role=ROLE_ADMIN)
+                    stats["masters"] += 1
 
         self.stdout.write("")
         verb = "Would apply" if dry_run else "Applied"
         self.stdout.write(self.style.SUCCESS(f"{verb}: {stats['updated']} updated, {stats['created']} created."))
+        if stats["masters"]:
+            wing_slugs = workspace_admin_wing_slugs()
+            admin_wings = "all wings" if "*" in wing_slugs else (", ".join(wing_slugs) or "no wing")
+            # Starts with "Would apply" / "Applied" so the data-operations workflow log shows it.
+            self.stdout.write(
+                f"{'Would apply' if dry_run else 'Applied'} wing masters: {stats['masters']} Admin of their wing's "
+                f"project (workspace Admin for: {admin_wings})."
+            )
         if stats["dupes"]:
             self.stdout.write(f"Skipped {stats['dupes']} duplicate email row(s).")
         for label, key in (

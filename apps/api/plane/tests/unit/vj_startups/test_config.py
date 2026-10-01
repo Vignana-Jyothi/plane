@@ -15,8 +15,45 @@ def clean_env(monkeypatch):
         "VJ_INSTITUTIONAL_EMAIL_DOMAINS",
         "VJ_MICROSERVICE_URL",
         "NEXT_PUBLIC_MICROSERVICE_URL",
+        "VJ_WORKSPACE_ADMIN_WINGS",
     ):
         monkeypatch.delenv(name, raising=False)
+
+
+@pytest.mark.unit
+class TestWingRoles:
+    def test_every_wing_master_is_a_workspace_admin_by_default(self):
+        assert config.workspace_admin_wing_slugs() == ["*"]
+        for wing in ("vision", "ignition", "talent", "echo", "fuel", "infra", "any-new-wing"):
+            assert config.workspace_role_for_wing(config.ROLE_ADMIN, wing) == config.ROLE_ADMIN, wing
+
+    def test_wing_members_are_never_workspace_admins_through_their_wing(self):
+        for wing in ("vision", "infra"):
+            assert config.workspace_role_for_wing(config.ROLE_MEMBER, wing) == config.ROLE_MEMBER
+
+    def test_a_missing_wing_slug_is_safe(self):
+        assert config.workspace_role_for_wing(config.ROLE_ADMIN, None) == config.ROLE_ADMIN  # "*" covers it
+        assert config.workspace_role_for_wing(config.ROLE_MEMBER, None) == config.ROLE_MEMBER
+
+    def test_the_setting_can_limit_it_to_named_wings(self, monkeypatch):
+        monkeypatch.setenv("VJ_WORKSPACE_ADMIN_WINGS", "Vision, infra ,")
+        assert config.workspace_admin_wing_slugs() == ["vision", "infra"]
+        assert config.workspace_role_for_wing(config.ROLE_ADMIN, "infra") == config.ROLE_ADMIN
+        assert config.workspace_role_for_wing(config.ROLE_ADMIN, " Vision ") == config.ROLE_ADMIN
+        assert config.workspace_role_for_wing(config.ROLE_ADMIN, "echo") == config.ROLE_MEMBER
+
+    def test_a_named_wing_list_matches_exactly_not_by_substring(self, monkeypatch):
+        monkeypatch.setenv("VJ_WORKSPACE_ADMIN_WINGS", "vision")
+        assert config.workspace_role_for_wing(config.ROLE_ADMIN, "supervision") == config.ROLE_MEMBER
+        assert config.workspace_role_for_wing(config.ROLE_ADMIN, None) == config.ROLE_MEMBER
+
+    def test_an_empty_setting_makes_no_wing_master_a_workspace_admin(self, monkeypatch):
+        monkeypatch.setenv("VJ_WORKSPACE_ADMIN_WINGS", "")
+        assert config.workspace_admin_wing_slugs() == []
+        assert config.workspace_role_for_wing(config.ROLE_ADMIN, "vision") == config.ROLE_MEMBER
+
+    def test_a_higher_role_than_admin_still_counts_as_admin(self):
+        assert config.workspace_role_for_wing(25, "vision") == config.ROLE_ADMIN
 
 
 @pytest.mark.unit

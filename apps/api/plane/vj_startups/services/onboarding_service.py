@@ -22,6 +22,7 @@ from plane.vj_startups.config import (
     is_institutional_email,
     microservice_base_url,
     public_site_url,
+    workspace_role_for_wing,
 )
 
 User = get_user_model()
@@ -346,9 +347,10 @@ class OnboardingService:
         """Called when a user is assigned to a Wing."""
         workspace = cls.get_or_create_global_workspace()
 
-        # If this is the Wing Master for the Vision Wing, escalate their Workspace role
-        workspace_role = 20 if role == 20 and "vision" in wing.slug.lower() else 15
-        
+        # A wing master is a workspace Admin only for the wings listed in
+        # VJ_WORKSPACE_ADMIN_WINGS (default: vision); see config.workspace_role_for_wing.
+        workspace_role = workspace_role_for_wing(role, wing.slug)
+
         # Add to Workspace
         wm, created = WorkspaceMember.objects.get_or_create(
             workspace=workspace,
@@ -371,12 +373,17 @@ class OnboardingService:
         # Add to Wing Project
         ext = VJProjectExtension.objects.filter(wing=wing).select_related('project').first()
         if ext and ext.project:
-            ProjectMember.objects.get_or_create(
+            pm, created = ProjectMember.objects.get_or_create(
                 workspace=workspace,
                 project=ext.project,
                 member=user,
                 defaults={"role": role}
             )
+            # Promote, never demote: the profile save signal adds everyone as a plain member
+            # first, so a wing master added afterwards must be able to be raised to Admin.
+            if not created and pm.role < role:
+                pm.role = role
+                pm.save(update_fields=['role'])
 
     @classmethod
     @transaction.atomic
