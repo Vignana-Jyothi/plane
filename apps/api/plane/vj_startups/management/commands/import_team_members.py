@@ -1,6 +1,7 @@
 import csv
 import re
 import uuid
+from urllib.parse import urlparse
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -74,7 +75,7 @@ def clean_photo_url(value):
     kept as is; anything else (a name typed into the cell, blank) is dropped. The Drive file
     must be shared as 'anyone with the link' for the image to load."""
     text = (value or "").strip()
-    if "drive.google.com" in text:
+    if urlparse(text).hostname == "drive.google.com":
         match = DRIVE_ID_RE.search(text)
         return f"https://drive.google.com/thumbnail?id={match.group(1)}&sz=w600" if match else ""
     return text if text.startswith("http") and len(text) <= 500 else ""

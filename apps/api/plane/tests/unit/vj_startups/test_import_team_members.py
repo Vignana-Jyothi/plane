@@ -102,6 +102,12 @@ class TestPhotoAndInstagram:
         assert clean_photo_url("https://example.com/me.jpg") == "https://example.com/me.jpg"
         assert clean_photo_url("Vahini Muttineni Photo") == ""
         assert clean_photo_url("https://drive.google.com/drive/folders/") == ""
+
+    def test_only_the_real_drive_host_is_rewritten(self):
+        lookalike = "https://evil.example/drive.google.com/file/d/1AbCdEfGhIjKlMnOp/view"
+
+        assert clean_photo_url(lookalike) == lookalike
+        assert clean_photo_url("see drive.google.com/file/d/1AbCdEfGhIjKlMnOp/view") == ""
         assert clean_photo_url("") == ""
 
     def test_the_sheet_photo_and_instagram_columns_are_read(self):
