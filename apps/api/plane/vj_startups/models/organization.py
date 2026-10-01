@@ -42,6 +42,11 @@ class OrganizationMemberProfile(BaseModel):
     headline = models.CharField(max_length=255, blank=True)
     github_url = models.URLField(blank=True)
     linkedin_url = models.URLField(blank=True)
+    # Nullable on purpose: the public site's backend (Prisma) writes to this table too, and a
+    # NOT NULL column without a database default would break its inserts.
+    instagram_url = models.URLField(max_length=200, null=True, blank=True)
+    # A directly loadable image URL for the public team page (set from the team sheet).
+    photo_url = models.URLField(max_length=500, null=True, blank=True)
     portfolio_url = models.URLField(blank=True)
     skills = models.JSONField(default=list)
     wing = models.ForeignKey(

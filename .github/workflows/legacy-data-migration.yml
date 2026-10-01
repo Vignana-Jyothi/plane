@@ -63,6 +63,10 @@ on:
         description: "instance-admin and workspace-member: the email of an account that has already signed in to Plane once"
         type: string
         required: false
+      public_site:
+        description: "team-members only: also list the team on the public site's team page and give them their public-site roles (wing masters edit, wing members verify)"
+        type: boolean
+        default: false
 
 concurrency:
   group: legacy-data-migration
@@ -296,10 +300,11 @@ jobs:
             docker exec api python manage.py remove_unused_master_accounts \
               --csv-file /tmp/team.csv --wing ignition --wing fuel $flags
 
-      - name: Team members (wings, roles, headline, LinkedIn)
+      - name: Team members (wings, roles, headline, LinkedIn, photo)
         if: inputs.part == 'team-members'
         env:
           TEAM_SHEET_CSV: ${{ secrets.TEAM_SHEET_CSV }}
+          PUBLIC_SITE: ${{ inputs.public_site }}
         run: |
           set -euo pipefail
           source "$RUNNER_TEMP/helpers.sh"
@@ -316,6 +321,7 @@ jobs:
           printf '%s\n' "$TEAM_SHEET_CSV" | docker exec -i api sh -c 'cat > /tmp/team.csv'
 
           flags="--create-missing"
+          if [ "$PUBLIC_SITE" = "true" ]; then flags="$flags --publish-team --set-public-roles"; fi
           if [ "$APPLY" != "true" ]; then flags="$flags --dry-run"; fi
           echo "Mode: $([ "$APPLY" = "true" ] && echo APPLY || echo 'dry run - nothing is written')"
           run_quiet '^(Would apply|Applied|Skipped|[0-9]+ skipped|  (create|update):)' \

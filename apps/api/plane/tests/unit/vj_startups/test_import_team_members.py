@@ -11,6 +11,7 @@ from plane.vj_startups.management.commands.import_team_members import (
     build_headline,
     clean_email,
     clean_name,
+    clean_photo_url,
     clean_url,
     parse_role,
     parse_rows,
@@ -87,3 +88,30 @@ class TestTeamSheetParsing:
     def test_parse_rows_errors_clearly_when_columns_are_missing(self):
         with pytest.raises(CommandError):
             list(parse_rows(io.StringIO("Foo,Bar\n1,2\n")))
+
+
+@pytest.mark.unit
+class TestPhotoAndInstagram:
+    def test_a_drive_share_link_becomes_a_loadable_image_url(self):
+        expected = "https://drive.google.com/thumbnail?id=1AbCdEfGhIjKlMnOp&sz=w600"
+
+        assert clean_photo_url("https://drive.google.com/file/d/1AbCdEfGhIjKlMnOp/view?usp=sharing") == expected
+        assert clean_photo_url("https://drive.google.com/open?id=1AbCdEfGhIjKlMnOp") == expected
+
+    def test_other_values_are_kept_only_when_they_are_urls(self):
+        assert clean_photo_url("https://example.com/me.jpg") == "https://example.com/me.jpg"
+        assert clean_photo_url("Vahini Muttineni Photo") == ""
+        assert clean_photo_url("https://drive.google.com/drive/folders/") == ""
+        assert clean_photo_url("") == ""
+
+    def test_the_sheet_photo_and_instagram_columns_are_read(self):
+        sheet = (
+            "Display Name,Wing Name,Role,email-id,Photo (Drive link),Insta (optional)\n"
+            "Asha Rao,Vision,Wing Master,asha@example.com,"
+            "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOp/view,https://instagram.com/asha?igsh=x\n"
+        )
+
+        (row,) = list(parse_rows(io.StringIO(sheet)))
+
+        assert row["photo"] == "https://drive.google.com/thumbnail?id=1AbCdEfGhIjKlMnOp&sz=w600"
+        assert row["instagram"] == "https://instagram.com/asha"

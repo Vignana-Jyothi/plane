@@ -24,7 +24,10 @@ COLUMN_PREFIXES = {
     "year": "year",
     "email": "email",
     "linkedin": "linkedin",
+    "insta": "instagram",
+    "photo": "photo",
 }
+DRIVE_ID_RE = re.compile(r"(?:/d/|[?&]id=)([A-Za-z0-9_-]{10,})")
 
 
 def normalise_headers(fieldnames):
@@ -66,6 +69,17 @@ def clean_url(value):
     return url if url.startswith("http") and len(url) <= 200 else ""
 
 
+def clean_photo_url(value):
+    """A Google Drive share link becomes a directly loadable image URL; another http(s) URL is
+    kept as is; anything else (a name typed into the cell, blank) is dropped. The Drive file
+    must be shared as 'anyone with the link' for the image to load."""
+    text = (value or "").strip()
+    if "drive.google.com" in text:
+        match = DRIVE_ID_RE.search(text)
+        return f"https://drive.google.com/thumbnail?id={match.group(1)}&sz=w600" if match else ""
+    return text if text.startswith("http") and len(text) <= 500 else ""
+
+
 def parse_role(value):
     """'wing member - ProblemHunt ' -> (False, 'Wing Member - ProblemHunt')."""
     text = " ".join((value or "").split())
@@ -97,6 +111,8 @@ def parse_rows(handle):
             "raw_email": fields["email"],
             "headline": build_headline(fields.get("department"), fields.get("year")),
             "linkedin": clean_url(fields.get("linkedin", "")),
+            "instagram": clean_url(fields.get("instagram", "")),
+            "photo": clean_photo_url(fields.get("photo", "")),
         }
 
 
@@ -121,6 +137,11 @@ class Command(BaseCommand):
                 "Also set the public-site role (WING_MASTER / WING_MEMBER), which lets them verify problems "
                 "and ideas. Never changes an existing ADMIN. Off by default."
             ),
+        )
+        parser.add_argument(
+            "--publish-team",
+            action="store_true",
+            help="Also list the people in the sheet on the public site's team page (is_club_member). Off by default.",
         )
         parser.add_argument("--dry-run", action="store_true", help="Show what would change without writing.")
 
@@ -189,6 +210,12 @@ class Command(BaseCommand):
                     profile.headline = row["headline"]
                 if not profile.linkedin_url and row["linkedin"]:
                     profile.linkedin_url = row["linkedin"]
+                if not profile.instagram_url and row["instagram"]:
+                    profile.instagram_url = row["instagram"]
+                if not profile.photo_url and row["photo"]:
+                    profile.photo_url = row["photo"]
+                if options["publish_team"]:
+                    profile.is_club_member = True
                 if options["set_public_roles"] and profile.public_role != OrganizationMemberProfile.PublicRole.ADMIN:
                     profile.public_role = (
                         OrganizationMemberProfile.PublicRole.WING_MASTER

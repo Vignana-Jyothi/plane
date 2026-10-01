@@ -31,6 +31,7 @@ from .views.admin import (
     AdminMicroserviceProblemVerifyProxyEndpoint,
     AdminMicroserviceIdeaVerifyProxyEndpoint
 )
+from .views.public_team import PublicTeamEndpoint
 from .views.public_auth import (
     PublicSiteUpsertUserEndpoint,
     InternalProvisionStartupEndpoint,
@@ -93,6 +94,9 @@ urlpatterns = [
     path("leaderboards/members/", MemberLeaderboardEndpoint.as_view(), name="leaderboard-members"),
     path("leaderboards/startups/", StartupLeaderboardEndpoint.as_view(), name="leaderboard-startups"),
     path("leaderboards/wings/", WingLeaderboardEndpoint.as_view(), name="leaderboard-wings"),
+
+    # Public team directory (for the public site's team page)
+    path("public/team/", PublicTeamEndpoint.as_view(), name="public-team"),
 
     # Public Profiles
     path("public/members/<str:slug>/", PublicMemberProfileEndpoint.as_view(), name="public-member-profile"),
