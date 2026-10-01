@@ -23,8 +23,9 @@ DEFAULT_INSTITUTIONAL_EMAIL_DOMAINS = "vnrvjiet.in"
 LOCAL_MICROSERVICE_URL = "http://localhost:6220"
 
 # Wings whose master is made an Admin of the whole workspace (not just of the wing's own
-# project). Was a hardcoded "vision" check inside the onboarding service.
-DEFAULT_WORKSPACE_ADMIN_WINGS = "vision"
+# project). "*" means every wing. It was a hardcoded "vision" check inside the onboarding
+# service, which left the other wing masters as plain members.
+DEFAULT_WORKSPACE_ADMIN_WINGS = "*"
 
 # Plane roles, as stored on workspace and project members.
 ROLE_MEMBER = 15
@@ -49,7 +50,7 @@ def institutional_email_domains():
 
 
 def workspace_admin_wing_slugs():
-    """Lower-case wing slugs from VJ_WORKSPACE_ADMIN_WINGS (comma separated; default 'vision')."""
+    """Lower-case wing slugs from VJ_WORKSPACE_ADMIN_WINGS (comma separated; default '*' = all)."""
     raw = os.environ.get("VJ_WORKSPACE_ADMIN_WINGS")
     if raw is None:
         raw = DEFAULT_WORKSPACE_ADMIN_WINGS
@@ -59,11 +60,15 @@ def workspace_admin_wing_slugs():
 def workspace_role_for_wing(project_role, wing_slug):
     """
     Workspace role for someone joining a wing with the given project role. A wing's
-    master (project role Admin) becomes a workspace Admin only if that wing is listed in
-    VJ_WORKSPACE_ADMIN_WINGS; everyone else is a plain workspace Member. Set the variable
-    to an empty string to make no wing master a workspace admin.
+    master (project role Admin) becomes a workspace Admin if that wing is listed in
+    VJ_WORKSPACE_ADMIN_WINGS ("*", the default, means every wing); everyone else is a plain
+    workspace Member. Set the variable to an empty string to make no wing master a
+    workspace Admin.
     """
-    if project_role >= ROLE_ADMIN and (wing_slug or "").strip().lower() in workspace_admin_wing_slugs():
+    if project_role < ROLE_ADMIN:
+        return ROLE_MEMBER
+    slugs = workspace_admin_wing_slugs()
+    if "*" in slugs or (wing_slug or "").strip().lower() in slugs:
         return ROLE_ADMIN
     return ROLE_MEMBER
 

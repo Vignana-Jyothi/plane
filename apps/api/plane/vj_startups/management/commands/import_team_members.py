@@ -215,7 +215,8 @@ class Command(BaseCommand):
         verb = "Would apply" if dry_run else "Applied"
         self.stdout.write(self.style.SUCCESS(f"{verb}: {stats['updated']} updated, {stats['created']} created."))
         if stats["masters"]:
-            admin_wings = ", ".join(workspace_admin_wing_slugs()) or "no wing"
+            wing_slugs = workspace_admin_wing_slugs()
+            admin_wings = "all wings" if "*" in wing_slugs else (", ".join(wing_slugs) or "no wing")
             # Starts with "Would apply" / "Applied" so the data-operations workflow log shows it.
             self.stdout.write(
                 f"{'Would apply' if dry_run else 'Applied'} wing masters: {stats['masters']} Admin of their wing's "

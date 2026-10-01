@@ -22,24 +22,30 @@ def clean_env(monkeypatch):
 
 @pytest.mark.unit
 class TestWingRoles:
-    def test_the_vision_master_is_a_workspace_admin_by_default(self):
-        assert config.workspace_admin_wing_slugs() == ["vision"]
-        assert config.workspace_role_for_wing(config.ROLE_ADMIN, "vision") == config.ROLE_ADMIN
+    def test_every_wing_master_is_a_workspace_admin_by_default(self):
+        assert config.workspace_admin_wing_slugs() == ["*"]
+        for wing in ("vision", "ignition", "talent", "echo", "fuel", "infra", "any-new-wing"):
+            assert config.workspace_role_for_wing(config.ROLE_ADMIN, wing) == config.ROLE_ADMIN, wing
 
-    def test_other_wing_masters_and_all_members_are_plain_workspace_members(self):
-        assert config.workspace_role_for_wing(config.ROLE_ADMIN, "infra") == config.ROLE_MEMBER
-        assert config.workspace_role_for_wing(config.ROLE_MEMBER, "vision") == config.ROLE_MEMBER
+    def test_wing_members_are_never_workspace_admins_through_their_wing(self):
+        for wing in ("vision", "infra"):
+            assert config.workspace_role_for_wing(config.ROLE_MEMBER, wing) == config.ROLE_MEMBER
 
-    def test_the_wing_match_is_exact_and_case_insensitive(self):
-        assert config.workspace_role_for_wing(config.ROLE_ADMIN, " Vision ") == config.ROLE_ADMIN
-        assert config.workspace_role_for_wing(config.ROLE_ADMIN, "supervision") == config.ROLE_MEMBER
-        assert config.workspace_role_for_wing(config.ROLE_ADMIN, None) == config.ROLE_MEMBER
+    def test_a_missing_wing_slug_is_safe(self):
+        assert config.workspace_role_for_wing(config.ROLE_ADMIN, None) == config.ROLE_ADMIN  # "*" covers it
+        assert config.workspace_role_for_wing(config.ROLE_MEMBER, None) == config.ROLE_MEMBER
 
-    def test_the_wings_can_be_changed_with_the_setting(self, monkeypatch):
+    def test_the_setting_can_limit_it_to_named_wings(self, monkeypatch):
         monkeypatch.setenv("VJ_WORKSPACE_ADMIN_WINGS", "Vision, infra ,")
         assert config.workspace_admin_wing_slugs() == ["vision", "infra"]
         assert config.workspace_role_for_wing(config.ROLE_ADMIN, "infra") == config.ROLE_ADMIN
+        assert config.workspace_role_for_wing(config.ROLE_ADMIN, " Vision ") == config.ROLE_ADMIN
         assert config.workspace_role_for_wing(config.ROLE_ADMIN, "echo") == config.ROLE_MEMBER
+
+    def test_a_named_wing_list_matches_exactly_not_by_substring(self, monkeypatch):
+        monkeypatch.setenv("VJ_WORKSPACE_ADMIN_WINGS", "vision")
+        assert config.workspace_role_for_wing(config.ROLE_ADMIN, "supervision") == config.ROLE_MEMBER
+        assert config.workspace_role_for_wing(config.ROLE_ADMIN, None) == config.ROLE_MEMBER
 
     def test_an_empty_setting_makes_no_wing_master_a_workspace_admin(self, monkeypatch):
         monkeypatch.setenv("VJ_WORKSPACE_ADMIN_WINGS", "")

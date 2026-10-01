@@ -18,13 +18,23 @@ roles follow wings today and why.
 - Every wing has its own project, private by default, created automatically.
 - **Wing member** -> Member of their wing's project (and of the General project).
 - **Wing master** -> **Admin of their wing's project**.
-- The master of each wing listed in `VJ_WORKSPACE_ADMIN_WINGS` (default: `vision`) is also an
-  **Admin of the whole workspace**. Set the variable to a comma-separated list of wing slugs to
-  change that, or to an empty value to give no wing master workspace admin.
+- **Every wing master** is also an **Admin of the whole workspace**. This is controlled by
+  `VJ_WORKSPACE_ADMIN_WINGS`: the default `*` means every wing; set it to a comma-separated list
+  of wing slugs to limit it, or to an empty value to give no wing master workspace admin.
+- A workspace Admin sees **every project** in the workspace, including the private wing projects
+  (Plane only filters the project list for Members and Guests). So all wing masters can see all
+  wings.
+- Anyone else who should administer the workspace (for example a faculty adviser) is promoted by
+  an existing workspace Admin in Plane: Workspace settings, Members, change the role to Admin.
+- The **Vision wing** also has access to every other project: its members are added as members
+  of all projects with the `wing-access` part of the "Data operations" workflow
+  (`wing=vision`, `workspace=vj-startups`). It only adds what is missing, so it is safe to
+  re-run after new projects or new Vision members appear.
 - Everyone with a college email is a plain workspace Member and is in the General project.
 
 Roles only ever go **up** automatically: the system promotes a wing master to Admin but never
-demotes anyone. Demoting is done by hand in Plane (Workspace settings, Members).
+demotes anyone. Demoting is done by hand in Plane (Workspace settings, Members). A wing master
+who is replaced keeps their Admin roles until someone lowers them.
 
 ## Why wings are projects and not workspaces
 
