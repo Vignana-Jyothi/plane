@@ -22,6 +22,14 @@ DEFAULT_INSTITUTIONAL_EMAIL_DOMAINS = "vnrvjiet.in"
 # Only ever used in local development (DEBUG on), where backend 2 runs beside the API.
 LOCAL_MICROSERVICE_URL = "http://localhost:6220"
 
+# Wings whose master is made an Admin of the whole workspace (not just of the wing's own
+# project). Was a hardcoded "vision" check inside the onboarding service.
+DEFAULT_WORKSPACE_ADMIN_WINGS = "vision"
+
+# Plane roles, as stored on workspace and project members.
+ROLE_MEMBER = 15
+ROLE_ADMIN = 20
+
 
 class MicroserviceNotConfigured(APIException):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
@@ -38,6 +46,26 @@ def institutional_email_domains():
     """Lower-case email domains (no '@') from VJ_INSTITUTIONAL_EMAIL_DOMAINS, comma separated."""
     raw = os.environ.get("VJ_INSTITUTIONAL_EMAIL_DOMAINS") or DEFAULT_INSTITUTIONAL_EMAIL_DOMAINS
     return [d.strip().lstrip("@").lower() for d in raw.split(",") if d.strip()]
+
+
+def workspace_admin_wing_slugs():
+    """Lower-case wing slugs from VJ_WORKSPACE_ADMIN_WINGS (comma separated; default 'vision')."""
+    raw = os.environ.get("VJ_WORKSPACE_ADMIN_WINGS")
+    if raw is None:
+        raw = DEFAULT_WORKSPACE_ADMIN_WINGS
+    return [s.strip().lower() for s in raw.split(",") if s.strip()]
+
+
+def workspace_role_for_wing(project_role, wing_slug):
+    """
+    Workspace role for someone joining a wing with the given project role. A wing's
+    master (project role Admin) becomes a workspace Admin only if that wing is listed in
+    VJ_WORKSPACE_ADMIN_WINGS; everyone else is a plain workspace Member. Set the variable
+    to an empty string to make no wing master a workspace admin.
+    """
+    if project_role >= ROLE_ADMIN and (wing_slug or "").strip().lower() in workspace_admin_wing_slugs():
+        return ROLE_ADMIN
+    return ROLE_MEMBER
 
 
 def is_institutional_email(email):
