@@ -13,6 +13,18 @@ from django.utils.deprecation import MiddlewareMixin
 from django.utils.http import http_date
 
 
+# Paths that belong to the admin app (god-mode) and so use the admin session cookie, which the
+# admin sign-in sets. Plane's own admin API contains "instances"; the VJ Startups admin pages
+# (Ecosystem Users, Wings, Events, ...) call /api/vj-startups/admin/. Without the second entry an
+# Instance Admin who signed in to god-mode only got 401 there and had to sign in to the main
+# app as well.
+ADMIN_SESSION_PATH_MARKERS = ("instances", "/api/vj-startups/admin/")
+
+
+def uses_admin_session(path):
+    return any(marker in path for marker in ADMIN_SESSION_PATH_MARKERS)
+
+
 class SessionMiddleware(MiddlewareMixin):
     def __init__(self, get_response):
         super().__init__(get_response)
@@ -20,7 +32,7 @@ class SessionMiddleware(MiddlewareMixin):
         self.SessionStore = engine.SessionStore
 
     def process_request(self, request):
-        if "instances" in request.path:
+        if uses_admin_session(request.path):
             session_key = request.COOKIES.get(settings.ADMIN_SESSION_COOKIE_NAME)
         else:
             session_key = request.COOKIES.get(settings.SESSION_COOKIE_NAME)
@@ -40,7 +52,7 @@ class SessionMiddleware(MiddlewareMixin):
             return response
         # First check if we need to delete this cookie.
         # The session should be deleted only if the session is entirely empty.
-        is_admin_path = "instances" in request.path
+        is_admin_path = uses_admin_session(request.path)
         cookie_name = settings.ADMIN_SESSION_COOKIE_NAME if is_admin_path else settings.SESSION_COOKIE_NAME
 
         if cookie_name in request.COOKIES and empty:
