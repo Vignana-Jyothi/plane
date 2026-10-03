@@ -33,6 +33,7 @@ on:
           - instance-admin
           - workspace-member
           - remove-unused-masters
+          - prune-workspace-members
       apply:
         description: Write to the database (leave unticked for a dry run that writes nothing)
         type: boolean
@@ -234,6 +235,31 @@ jobs:
             # Refuses (with a clear message) if the account is missing or already an admin.
             run_quiet '.' docker exec api python manage.py create_instance_admin "$email"
           fi
+
+      # Removes every non-Admin member from a workspace (default: vj-startups), the way Plane's own
+      # Remove button does: memberships are deactivated, no account is deleted, pending invitations
+      # and the workspace owner are untouched. The dry run prints only counts.
+      - name: Remove non-admin members from a workspace
+        if: inputs.part == 'prune-workspace-members'
+        env:
+          WORKSPACE: ${{ inputs.workspace }}
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/helpers.sh"
+
+          if ! printf '%s' "$WORKSPACE" | grep -Eq '^[A-Za-z0-9._-]+$'; then
+            echo "::error::workspace may only contain letters, digits, dots, dashes and underscores."
+            exit 1
+          fi
+          docker inspect api > /dev/null || { echo "::error::No container named 'api' is running."; exit 1; }
+          docker exec api test -f plane/vj_startups/management/commands/prune_workspace_members.py \
+            || { echo "::error::prune_workspace_members is not in the running API image yet - wait for the Plane deploy to finish."; exit 1; }
+
+          flags=""
+          if [ "$APPLY" != "true" ]; then flags="--dry-run"; fi
+          echo "Mode: $([ "$APPLY" = "true" ] && echo APPLY || echo 'dry run - nothing is written')"
+          run_quiet '^(Admins kept|Pending invitations|Would remove|Removed|Deactivated|Nothing to remove|Could not clear|Dry run)' \
+            docker exec api python manage.py prune_workspace_members --workspace "$WORKSPACE" $flags
 
       # Gives an existing account a role in a workspace (default: vj-startups): adds it, re-activates
       # a deactivated membership, or raises a lower role. Never lowers a role. Being an Instance
