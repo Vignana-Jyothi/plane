@@ -5,6 +5,7 @@ from django.db import transaction
 from plane.db.models import Workspace
 from plane.license.models import InstanceAdmin
 from plane.vj_startups.management.commands.seed_vj_startups import DEMO_ACCOUNT_EMAILS
+from plane.vj_startups.models.organization import OrganizationMemberProfile
 
 User = get_user_model()
 
@@ -16,7 +17,9 @@ class Command(BaseCommand):
         "was written in a public repository, and admin@ was a superuser and workspace admin. This "
         "removes their password (an unusable one is set), strips superuser/staff, and with --deactivate "
         "also disables the accounts. It never deletes anything and never touches instance-admin rows or "
-        "workspace ownership - it only reports them. Idempotent; use --dry-run first."
+        "workspace ownership - it only reports them. It also unlists the accounts' profiles from the public "
+        "team page (the seed flagged them as club members, so they would show as real people). "
+        "Idempotent; use --dry-run first."
     )
 
     def add_arguments(self, parser):
@@ -72,6 +75,16 @@ class Command(BaseCommand):
                     user.is_active = False
                 user.save()
             changed += 1
+
+        # The seed flagged these profiles as club members, which publishes them on the public team page
+        # (GET /api/vj-startups/public/team/). Unlist them even if the accounts were locked earlier.
+        listed = OrganizationMemberProfile.objects.filter(user__in=users, is_club_member=True)
+        listed_count = listed.count()
+        if listed_count:
+            tense = "would be " if dry_run else ""
+            self.stdout.write(f"  {listed_count} demo profile(s) {tense}unlisted from the public team page")
+            if not dry_run:
+                listed.update(is_club_member=False)
 
         verb = "Would lock" if dry_run else "Locked"
         self.stdout.write(self.style.SUCCESS(f"{verb} {changed} of {len(users)} demo account(s)."))

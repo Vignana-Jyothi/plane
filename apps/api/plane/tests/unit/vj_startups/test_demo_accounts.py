@@ -19,6 +19,7 @@ from plane.vj_startups.management.commands.seed_vj_startups import (
     DEMO_ACCOUNTS,
     Command as SeedCommand,
 )
+from plane.vj_startups.models.organization import OrganizationMemberProfile
 
 # The password the old seed wrote onto every demo account on every deploy, in a
 # public repository. It must never come back.
@@ -135,3 +136,33 @@ class TestLockDemoAccounts:
 
     def test_reports_cleanly_when_no_demo_accounts_exist(self):
         assert "nothing to do" in run_lock()
+
+    def test_unlists_the_demo_profiles_from_the_public_team_page(self):
+        demo = make_user("member1@vnrvjiet.in")
+        real = make_user("someone.real@vnrvjiet.in")
+        OrganizationMemberProfile.objects.create(user=demo, is_club_member=True)
+        OrganizationMemberProfile.objects.create(user=real, is_club_member=True)
+
+        output = run_lock()
+
+        assert "1 demo profile(s) unlisted" in output
+        assert not OrganizationMemberProfile.objects.get(user=demo).is_club_member
+        assert OrganizationMemberProfile.objects.get(user=real).is_club_member
+
+    def test_unlisting_also_happens_for_an_account_that_was_locked_earlier(self):
+        demo = make_user("member1@vnrvjiet.in")
+        run_lock()
+        OrganizationMemberProfile.objects.create(user=demo, is_club_member=True)
+
+        run_lock()
+
+        assert not OrganizationMemberProfile.objects.get(user=demo).is_club_member
+
+    def test_a_dry_run_leaves_the_profiles_listed(self):
+        demo = make_user("member1@vnrvjiet.in")
+        OrganizationMemberProfile.objects.create(user=demo, is_club_member=True)
+
+        output = run_lock("--dry-run")
+
+        assert "would be unlisted" in output
+        assert OrganizationMemberProfile.objects.get(user=demo).is_club_member
