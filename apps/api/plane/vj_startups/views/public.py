@@ -1,5 +1,6 @@
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 from plane.vj_startups.models.startup import Startup
@@ -16,8 +17,11 @@ class PublicMemberProfileEndpoint(generics.RetrieveAPIView):
         from plane.vj_startups.models.startup import StartupMember
         from django.db.models import Sum
 
+        # Only profiles whose owner published them. Looked up by handle, or by username for old links.
         profile = get_object_or_404(
-            OrganizationMemberProfile.objects.select_related('user', 'wing'), user__username=slug
+            OrganizationMemberProfile.objects.select_related('user', 'wing').filter(
+                Q(handle=slug.lower()) | Q(user__username=slug), profile_visibility='public'
+            )
         )
         user = profile.user
         

@@ -49,6 +49,10 @@ class OrganizationMemberProfile(BaseModel):
     photo_url = models.URLField(max_length=500, null=True, blank=True)
     portfolio_url = models.URLField(blank=True)
     skills = models.JSONField(default=list)
+    # Public profile. Both nullable for the same reason as instagram_url above (Prisma inserts);
+    # NULL visibility means private - a member's profile is only ever published by their own choice.
+    handle = models.SlugField(max_length=30, unique=True, null=True, blank=True)
+    profile_visibility = models.CharField(max_length=10, null=True, blank=True)
     wing = models.ForeignKey(
         Wing,
         on_delete=models.SET_NULL,
