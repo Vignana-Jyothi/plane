@@ -37,6 +37,10 @@ export const PROFILE_SETTINGS: Record<
     key: "security",
     i18n_label: "profile.actions.security",
   },
+  "public-profile": {
+    key: "public-profile",
+    i18n_label: "profile.actions.public-profile",
+  },
   preferences: {
     key: "preferences",
     i18n_label: "profile.actions.preferences",
@@ -59,6 +63,7 @@ export const GROUPED_PROFILE_SETTINGS: Record<
 > = {
   [PROFILE_SETTINGS_CATEGORY.YOUR_PROFILE]: [
     PROFILE_SETTINGS["general"],
+    PROFILE_SETTINGS["public-profile"],
     PROFILE_SETTINGS["preferences"],
     PROFILE_SETTINGS["notifications"],
     PROFILE_SETTINGS["security"],

@@ -10,6 +10,7 @@ import type { TProfileSettingsTabs } from "@plane/types";
 
 export const PROFILE_SETTINGS_PAGES_MAP: Record<TProfileSettingsTabs, React.LazyExoticComponent<React.FC>> = {
   general: lazy(() => import("./general").then((m) => ({ default: m.GeneralProfileSettings }))),
+  "public-profile": lazy(() => import("./public-profile").then((m) => ({ default: m.PublicProfileSettings }))),
   preferences: lazy(() => import("./preferences").then((m) => ({ default: m.PreferencesProfileSettings }))),
   notifications: lazy(() => import("./notifications").then((m) => ({ default: m.NotificationsProfileSettings }))),
   security: lazy(() => import("./security").then((m) => ({ default: m.SecurityProfileSettings }))),
