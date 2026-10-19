@@ -21,6 +21,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from plane.authentication.session import BaseSessionAuthentication
 from plane.vj_startups.models.extension import VJProjectExtension
 from plane.vj_startups.models.organization import OrganizationMemberProfile
 from plane.vj_startups.models.startup import StartupMember
@@ -279,6 +280,8 @@ class PublicProfileEndpoint(APIView):
 class MyProfileEndpoint(APIView):
     """GET/PATCH /profile/me/ - a signed-in member reads and edits their own public profile settings."""
 
+    # Same as the other endpoints Plane's web app calls: it does not send a CSRF token to its own API.
+    authentication_classes = [BaseSessionAuthentication]
     permission_classes = [IsAuthenticated]
 
     def _profile(self, request):
@@ -324,6 +327,7 @@ class MyProfileEndpoint(APIView):
 class HandleAvailabilityEndpoint(APIView):
     """GET /profile/handle-available/?handle=x - lets the settings form check as the member types."""
 
+    authentication_classes = [BaseSessionAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
