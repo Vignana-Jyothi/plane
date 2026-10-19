@@ -98,15 +98,18 @@ or digit. Reserved words (`admin`, `api`, `settings`, …) are refused. Stored l
 
 ## Rollout
 
-* Phase 1 (this change): handle + visibility, calendar service, public profile API, settings API.
-* Phase 2: "Public profile" page in Plane's settings (`apps/web`) to edit the above.
-* Phase 3 (main website repo): `/u/<handle>` page that renders the payload above, with the calendar.
-* Later ideas: more badge rules, pinned work, a README-embeddable heatmap image, wing leaderboards
-  linking to profiles.
+* Phase 1 (done): handle + visibility, calendar service, public profile API, settings API.
+* Phase 2 (done): "Public profile" tab in Plane's profile settings (`apps/web`) to edit the above.
+* Automatic badges (done): first task, 10/100 tasks, 7/30-day streaks, 100 active days, awarded by
+  `sync_contributions`.
+* Phase 3 (main website repo, not started): `/u/<handle>` page that renders the payload above, with
+  the calendar.
+* Later ideas: pinned work, a README-embeddable heatmap image, wing leaderboards linking to profiles.
 
-## Known follow-ups
+## Notes
 
-* `sync_contributions` and the member leaderboard still read the older snapshot table and list
-  every member regardless of visibility. The leaderboard should be restricted to published
-  profiles before it is shown on the website.
-* The calendar covers the global workspace only (`OnboardingService.WORKSPACE_SLUG`).
+* `GET leaderboards/members/` lists only members who published their profile.
+* `sync_contributions` still writes the older per-project snapshot table, which the legacy
+  `public/members/<slug>/` endpoint reads. The new profile does not use it.
+* The calendar covers the global workspace only (`OnboardingService.WORKSPACE_SLUG`, set with
+  `VJ_WORKSPACE_SLUG`).

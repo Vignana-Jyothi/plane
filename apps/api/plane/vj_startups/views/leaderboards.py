@@ -9,7 +9,13 @@ class MemberLeaderboardEndpoint(generics.ListAPIView):
     permission_classes = [AllowAny] # Publicly accessible for now, could be feature flagged
 
     def get_queryset(self):
-        return OrganizationMemberProfile.objects.order_by('-reputation_score')[:100]
+        # Only members who published their profile (see views/profiles.py); everyone else stays off
+        # a public list, however high their score.
+        return (
+            OrganizationMemberProfile.objects.filter(profile_visibility="public")
+            .select_related("user", "wing")
+            .order_by("-reputation_score")[:100]
+        )
 
 class StartupLeaderboardEndpoint(generics.ListAPIView):
     serializer_class = PublicStartupSerializer
