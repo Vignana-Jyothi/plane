@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useState } from "react";
 import useSWR, { mutate as globalMutate } from "swr";
@@ -14,15 +14,26 @@ const vjStartupsService = new VJStartupsService();
 const PUBLIC_SITE_URL = (process.env.VITE_VJ_PUBLIC_SITE_URL || "https://www.vjstartup.com").replace(/\/$/, "");
 
 const STAGE_LABELS: Record<number, string> = {
-  1: "Idea", 2: "Research", 3: "Prototype", 4: "MVP",
-  5: "Beta", 6: "Launch", 7: "Growth", 8: "Scale", 9: "Mature"
+  1: "Idea",
+  2: "Research",
+  3: "Prototype",
+  4: "MVP",
+  5: "Beta",
+  6: "Launch",
+  7: "Growth",
+  8: "Scale",
+  9: "Mature",
 };
 
 export default function VJStartupsDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: metrics, mutate: mutateMetrics } = useSWR("VJ_STARTUPS_METRICS", () => vjStartupsService.fetchMetrics());
-  const { data: startups, mutate: mutateStartups } = useSWR("VJ_STARTUPS_LIST", () => vjStartupsService.fetchStartups());
+  const { data: metrics, mutate: mutateMetrics } = useSWR("VJ_STARTUPS_METRICS", () =>
+    vjStartupsService.fetchMetrics()
+  );
+  const { data: startups, mutate: mutateStartups } = useSWR("VJ_STARTUPS_LIST", () =>
+    vjStartupsService.fetchStartups()
+  );
 
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedStartupSlug, setSelectedStartupSlug] = useState("");
@@ -52,7 +63,8 @@ export default function VJStartupsDashboard() {
   };
 
   const handleDelete = async (slug: string) => {
-    if (!confirm("Are you sure you want to PERMANENTLY DELETE this startup and its project? This cannot be undone.")) return;
+    if (!confirm("Are you sure you want to PERMANENTLY DELETE this startup and its project? This cannot be undone."))
+      return;
     try {
       await vjStartupsService.deleteStartup(slug);
       mutateStartups();
@@ -107,37 +119,37 @@ export default function VJStartupsDashboard() {
       }}
     >
       {/* Ecosystem Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard title="Total Startups" value={metrics?.total_startups ?? "-"} />
         <MetricCard title="Active Members" value={metrics?.active_members ?? "-"} />
-        <MetricCard 
-          title="Funding Raised" 
-          value={metrics?.funding_raised !== undefined ? `$${metrics.funding_raised.toLocaleString()}` : "-"} 
+        <MetricCard
+          title="Funding Raised"
+          value={metrics?.funding_raised !== undefined ? `$${metrics.funding_raised.toLocaleString()}` : "-"}
         />
         <MetricCard title="Total Users" value={metrics?.total_users ?? "-"} />
       </div>
 
-      <div className="border border-subtle rounded-lg bg-surface-1 overflow-hidden shadow-sm">
+      <div className="shadow-sm overflow-hidden rounded-lg border border-subtle bg-surface-1">
         {!startups ? (
-          <div className="text-sm text-tertiary p-6 text-center">Loading startups...</div>
+          <div className="text-sm p-6 text-center text-tertiary">Loading startups...</div>
         ) : (
           <table className="w-full text-left text-13">
-            <thead className="bg-layer-1 text-tertiary border-b border-subtle">
+            <thead className="border-b border-subtle bg-layer-1 text-tertiary">
               <tr>
                 <th className="px-6 py-3 font-medium">Name</th>
                 <th className="px-6 py-3 font-medium">Slug</th>
                 <th className="px-6 py-3 font-medium">TRL Stage</th>
                 <th className="px-6 py-3 font-medium">Status</th>
-                <th className="px-6 py-3 font-medium text-right">Actions</th>
+                <th className="px-6 py-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-subtle">
               {startups.map((startup: any) => (
-                <tr key={startup.id} className="hover:bg-layer-1 transition-colors">
+                <tr key={startup.id} className="transition-colors hover:bg-layer-1">
                   <td className="px-6 py-4 font-medium text-primary">
                     <div>
                       <div className="text-13">{startup.name}</div>
-                      {startup.tagline && <div className="text-11 text-tertiary mt-0.5">{startup.tagline}</div>}
+                      {startup.tagline && <div className="mt-0.5 text-11 text-tertiary">{startup.tagline}</div>}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-tertiary">{startup.slug}</td>
@@ -145,17 +157,21 @@ export default function VJStartupsDashboard() {
                     <select
                       value={startup.trl_stage || 1}
                       onChange={(e) => handleStageChange(startup.slug, parseInt(e.target.value))}
-                      className="bg-transparent border border-subtle rounded text-xs px-2.5 py-1.5 outline-none cursor-pointer font-medium text-secondary"
+                      className="text-xs cursor-pointer rounded border border-subtle bg-transparent px-2.5 py-1.5 font-medium text-secondary outline-none"
                     >
                       {Object.entries(STAGE_LABELS).map(([val, label]) => (
-                        <option key={val} value={val}>{val}: {label}</option>
+                        <option key={val} value={val}>
+                          {val}: {label}
+                        </option>
                       ))}
                     </select>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded text-11 font-medium ${
-                      startup.status === "active" ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"
-                    }`}>
+                    <span
+                      className={`rounded px-2 py-1 text-11 font-medium ${
+                        startup.status === "active" ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"
+                      }`}
+                    >
                       {startup.status.toUpperCase()}
                     </span>
                   </td>
@@ -184,10 +200,10 @@ export default function VJStartupsDashboard() {
                         href={`${PUBLIC_SITE_URL}/startups/${startup.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1.5 text-tertiary hover:text-primary transition-colors border border-subtle rounded hover:bg-surface-2"
+                        className="rounded border border-subtle p-1.5 text-tertiary transition-colors hover:bg-surface-2 hover:text-primary"
                         title="View on Main Website"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     </div>
                   </td>
@@ -195,7 +211,9 @@ export default function VJStartupsDashboard() {
               ))}
               {startups.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-tertiary">No startups found.</td>
+                  <td colSpan={5} className="px-6 py-8 text-center text-tertiary">
+                    No startups found.
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -203,18 +221,19 @@ export default function VJStartupsDashboard() {
         )}
 
         {inviteModalOpen && (
-          <div className="fixed inset-0 bg-background/50 z-50 flex items-center justify-center backdrop-blur-sm">
-            <div className="bg-surface-1 border border-subtle rounded-lg w-full max-w-md p-6 shadow-custom">
-              <h3 className="text-18 font-medium text-primary mb-4">Invite Founders</h3>
-              <p className="text-13 text-tertiary mb-4">
-                Enter comma-separated email addresses. If they already have a Plane account, they will instantly be granted access to the Workspace and Plane Project.
+          <div className="bg-background/50 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+            <div className="shadow-custom w-full max-w-md rounded-lg border border-subtle bg-surface-1 p-6">
+              <h3 className="mb-4 text-18 font-medium text-primary">Invite Founders</h3>
+              <p className="mb-4 text-13 text-tertiary">
+                Enter comma-separated email addresses. If they already have a Plane account, they will instantly be
+                granted access to the Workspace and Plane Project.
               </p>
               <form onSubmit={handleInviteSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-12 font-medium text-tertiary mb-1">Emails</label>
+                  <label className="mb-1 block text-12 font-medium text-tertiary">Emails</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                    className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                     placeholder="founder@example.com, developer@example.com"
                     value={inviteEmails}
                     onChange={(e) => setInviteEmails(e.target.value)}
@@ -248,9 +267,9 @@ export default function VJStartupsDashboard() {
 
 function MetricCard({ title, value }: { title: string; value: string }) {
   return (
-    <div className="p-4 border border-subtle rounded bg-layer-1 shadow-sm">
-      <h3 className="text-13 text-tertiary font-medium">{title}</h3>
-      <p className="text-24 font-semibold mt-2 text-primary">{value}</p>
+    <div className="shadow-sm rounded border border-subtle bg-layer-1 p-4">
+      <h3 className="text-13 font-medium text-tertiary">{title}</h3>
+      <p className="mt-2 text-24 font-semibold text-primary">{value}</p>
     </div>
   );
 }
