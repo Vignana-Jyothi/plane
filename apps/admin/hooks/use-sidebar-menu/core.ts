@@ -10,18 +10,18 @@ import { LockIcon, WorkspaceIcon } from "@plane/propel/icons";
 // types
 import type { TSidebarMenuItem } from "./types";
 
-export type TCoreSidebarMenuKey = 
-  | "general" 
-  | "email" 
-  | "workspace" 
-  | "authentication" 
-  | "ai" 
-  | "image" 
-  | "vjstartups" 
-  | "vjIdeas" 
-  | "vjProblems" 
-  | "vjUsers" 
-  | "clubActivities" 
+export type TCoreSidebarMenuKey =
+  | "general"
+  | "email"
+  | "workspace"
+  | "authentication"
+  | "ai"
+  | "image"
+  | "vjstartups"
+  | "vjIdeas"
+  | "vjProblems"
+  | "vjUsers"
+  | "clubActivities"
   | "memberDirectory";
 
 export const coreSidebarMenuLinks: Record<TCoreSidebarMenuKey, TSidebarMenuItem> = {
