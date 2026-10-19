@@ -91,4 +91,12 @@ class Command(BaseCommand):
             ReputationService.calculate_reputation(profile)
             MemberProgressionService.evaluate_stage(profile)
 
+            # Automatic badges (first task, 100 tasks, streaks...) from the same real work.
+            from plane.vj_startups.services import badges, profile_activity
+            workspace = member.workspace
+            calendar = profile_activity.member_calendar(user, workspace)
+            new_badges = badges.award_badges(profile, badges.member_stats(user, workspace, calendar))
+            if new_badges:
+                self.stdout.write(f"  awarded badges: {', '.join(new_badges)}")
+
         self.stdout.write(self.style.SUCCESS("Successfully synced contribution snapshots!"))
