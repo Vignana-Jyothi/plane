@@ -108,7 +108,7 @@ or digit. Reserved words (`admin`, `api`, `settings`, …) are refused. Stored l
 
 ## Notes
 
-* `GET leaderboards/members/` lists only members who published their profile.
+* `GET leaderboards/members/` lists members who published their profile plus club members (already public on the team page).
 * `sync_contributions` still writes the older per-project snapshot table, which the legacy
   `public/members/<slug>/` endpoint reads. The new profile does not use it.
 * The calendar covers the global workspace only (`OnboardingService.WORKSPACE_SLUG`, set with
