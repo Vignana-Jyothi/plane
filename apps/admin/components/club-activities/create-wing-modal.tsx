@@ -38,18 +38,18 @@ export function CreateWingModal({ isOpen, onClose, onSuccess }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-background/50 z-50 flex items-center justify-center backdrop-blur-sm">
-      <div className="bg-surface-1 border border-subtle rounded-lg w-full max-w-md p-6 shadow-custom">
-        <h3 className="text-18 font-medium text-primary mb-4">Create New Wing</h3>
-        
-        {error && <div className="mb-4 text-red-500 text-sm">{error}</div>}
+    <div className="bg-background/50 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+      <div className="shadow-custom w-full max-w-md rounded-lg border border-subtle bg-surface-1 p-6">
+        <h3 className="mb-4 text-18 font-medium text-primary">Create New Wing</h3>
+
+        {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-12 font-medium text-tertiary mb-1">Wing Name</label>
+            <label className="mb-1 block text-12 font-medium text-tertiary">Wing Name</label>
             <input
               type="text"
-              className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+              className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
               placeholder="e.g. Web Development Wing"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -57,9 +57,9 @@ export function CreateWingModal({ isOpen, onClose, onSuccess }: Props) {
             />
           </div>
           <div>
-            <label className="block text-12 font-medium text-tertiary mb-1">Description</label>
+            <label className="mb-1 block text-12 font-medium text-tertiary">Description</label>
             <textarea
-              className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+              className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
               placeholder="What does this wing do?"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -67,16 +67,16 @@ export function CreateWingModal({ isOpen, onClose, onSuccess }: Props) {
             />
           </div>
           <div>
-            <label className="block text-12 font-medium text-tertiary mb-1">Theme Color (Hex)</label>
+            <label className="mb-1 block text-12 font-medium text-tertiary">Theme Color (Hex)</label>
             <input
               type="text"
-              className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+              className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
               placeholder="e.g. #FF5733"
               value={color}
               onChange={(e) => setColor(e.target.value)}
             />
           </div>
-          
+
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" onClick={onClose} disabled={loading}>
               Cancel

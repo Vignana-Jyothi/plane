@@ -76,7 +76,7 @@ export default function MemberDirectory() {
         role: newRole,
         wing: newWing || null,
         is_club_member: newShowcase,
-        avatar: newAvatar || ""
+        avatar: newAvatar || "",
       });
       // Clear and close
       setNewEmail("");
@@ -105,11 +105,11 @@ export default function MemberDirectory() {
         user: {
           first_name: editFirstName,
           last_name: editLastName,
-          avatar: editAvatar || ""
+          avatar: editAvatar || "",
         },
         role: editRole,
         wing: editWing || null,
-        is_club_member: editShowcase
+        is_club_member: editShowcase,
       });
       setSelectedMember(null);
       mutate();
@@ -124,14 +124,14 @@ export default function MemberDirectory() {
   // Real-time changes functions
   const handleToggleShowcase = async (member: MemberProfile, currentStatus: boolean) => {
     // Realtime update: update locally first (optimistic mutation)
-    const updatedMembers = members?.map((m: MemberProfile) => 
+    const updatedMembers = members?.map((m: MemberProfile) =>
       m.id === member.id ? { ...m, is_club_member: !currentStatus } : m
     );
     mutate(updatedMembers, false);
 
     try {
       await vjStartupsService.updateMember(member.id, {
-        is_club_member: !currentStatus
+        is_club_member: !currentStatus,
       });
       mutate(); // Sync with backend state
     } catch (err) {
@@ -142,14 +142,14 @@ export default function MemberDirectory() {
 
   const handleInlineWingChange = async (member: MemberProfile, wingId: string) => {
     const selectedWingObj = wings?.find((w: any) => w.id === wingId) || null;
-    const updatedMembers = members?.map((m: MemberProfile) => 
+    const updatedMembers = members?.map((m: MemberProfile) =>
       m.id === member.id ? { ...m, wing: selectedWingObj } : m
     );
     mutate(updatedMembers, false);
 
     try {
       await vjStartupsService.updateMember(member.id, {
-        wing: wingId || null
+        wing: wingId || null,
       });
       mutate();
     } catch (err) {
@@ -160,14 +160,12 @@ export default function MemberDirectory() {
 
   const handleInlineRoleBlur = async (member: MemberProfile, newRoleName: string) => {
     if (member.role === newRoleName) return;
-    const updatedMembers = members?.map((m: MemberProfile) => 
-      m.id === member.id ? { ...m, role: newRoleName } : m
-    );
+    const updatedMembers = members?.map((m: MemberProfile) => (m.id === member.id ? { ...m, role: newRoleName } : m));
     mutate(updatedMembers, false);
 
     try {
       await vjStartupsService.updateMember(member.id, {
-        role: newRoleName
+        role: newRoleName,
       });
       mutate();
     } catch (err) {
@@ -193,44 +191,49 @@ export default function MemberDirectory() {
     <PageWrapper
       header={{
         title: "Member Directory",
-        description: "Manage ecosystem members, configure roles, and select showcase members to display on the main portal.",
+        description:
+          "Manage ecosystem members, configure roles, and select showcase members to display on the main portal.",
         actions: (
           <Button variant="primary" onClick={() => setIsAddModalOpen(true)}>
-            <UserPlus className="w-4 h-4 mr-2" /> Add Member
+            <UserPlus className="mr-2 h-4 w-4" /> Add Member
           </Button>
-        )
+        ),
       }}
     >
-      <div className="mt-6 border border-subtle rounded-lg bg-surface-1 overflow-hidden shadow-sm">
-        <table className="w-full text-left border-collapse">
+      <div className="shadow-sm mt-6 overflow-hidden rounded-lg border border-subtle bg-surface-1">
+        <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-surface-2 border-b border-subtle text-12 font-medium text-tertiary">
+            <tr className="border-b border-subtle bg-surface-2 text-12 font-medium text-tertiary">
               <th className="px-6 py-3 font-semibold">User Details</th>
               <th className="px-6 py-3 font-semibold">Custom Role Name</th>
               <th className="px-6 py-3 font-semibold">Active Wing</th>
-              <th className="px-6 py-3 font-semibold text-center">Showcase (Website)</th>
-              <th className="px-6 py-3 font-semibold text-right">Actions</th>
+              <th className="px-6 py-3 text-center font-semibold">Showcase (Website)</th>
+              <th className="px-6 py-3 text-right font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-subtle">
             {members?.map((member: MemberProfile) => {
               const userObj = member.user || {};
-              const displayName = `${userObj.first_name || ""} ${userObj.last_name || ""}`.trim() || userObj.username || userObj.email || "Unknown User";
+              const displayName =
+                `${userObj.first_name || ""} ${userObj.last_name || ""}`.trim() ||
+                userObj.username ||
+                userObj.email ||
+                "Unknown User";
               const userAvatar = userObj.avatar;
               const userEmail = userObj.email || "";
               return (
-                <tr key={member.id} className="hover:bg-surface-2 transition-colors text-13">
+                <tr key={member.id} className="text-13 transition-colors hover:bg-surface-2">
                   {/* User details */}
-                  <td className="px-6 py-4 flex items-center gap-3">
+                  <td className="flex items-center gap-3 px-6 py-4">
                     <div className="relative">
                       {userAvatar ? (
-                        <img 
-                          src={userAvatar} 
-                          alt={displayName} 
-                          className="w-8 h-8 rounded-full border border-subtle object-cover"
+                        <img
+                          src={userAvatar}
+                          alt={displayName}
+                          className="h-8 w-8 rounded-full border border-subtle object-cover"
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-full border border-subtle bg-surface-2 flex items-center justify-center font-bold text-tertiary text-12 uppercase">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-subtle bg-surface-2 text-12 font-bold text-tertiary uppercase">
                           {displayName.slice(0, 2)}
                         </div>
                       )}
@@ -245,7 +248,7 @@ export default function MemberDirectory() {
                   <td className="px-6 py-4">
                     <input
                       type="text"
-                      className="bg-transparent border-b border-transparent hover:border-subtle focus:border-primary px-1 py-0.5 rounded outline-none w-full max-w-[200px]"
+                      className="focus:border-primary w-full max-w-[200px] rounded border-b border-transparent bg-transparent px-1 py-0.5 outline-none hover:border-subtle"
                       defaultValue={member.role}
                       key={`${member.id}-${member.role}`}
                       onBlur={(e) => handleInlineRoleBlur(member, e.target.value)}
@@ -255,15 +258,20 @@ export default function MemberDirectory() {
                   {/* Active Wing Select */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full border border-subtle" style={{ backgroundColor: member.wing?.color || "#94a3b8" }} />
+                      <span
+                        className="h-2.5 w-2.5 rounded-full border border-subtle"
+                        style={{ backgroundColor: member.wing?.color || "#94a3b8" }}
+                      />
                       <select
-                        className="bg-transparent outline-none cursor-pointer text-13 font-medium text-secondary"
+                        className="cursor-pointer bg-transparent text-13 font-medium text-secondary outline-none"
                         value={member.wing?.id || ""}
                         onChange={(e) => handleInlineWingChange(member, e.target.value)}
                       >
                         <option value="">No Wing</option>
                         {wings?.map((wing: any) => (
-                          <option key={wing.id} value={wing.id}>{wing.name}</option>
+                          <option key={wing.id} value={wing.id}>
+                            {wing.name}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -273,13 +281,13 @@ export default function MemberDirectory() {
                   <td className="px-6 py-4 text-center">
                     <button
                       onClick={() => handleToggleShowcase(member, member.is_club_member)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-11 font-medium border transition-colors ${
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-11 font-medium transition-colors ${
                         member.is_club_member
                           ? "bg-green-500/10 text-green-600 border-green-500/20"
-                          : "bg-surface-2 text-tertiary border-subtle"
+                          : "border-subtle bg-surface-2 text-tertiary"
                       }`}
                     >
-                      <Globe className="w-3.5 h-3.5" />
+                      <Globe className="h-3.5 w-3.5" />
                       {member.is_club_member ? "Showcased" : "Private"}
                     </button>
                   </td>
@@ -287,17 +295,17 @@ export default function MemberDirectory() {
                   {/* Actions */}
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      <button 
+                      <button
                         onClick={() => handleOpenEdit(member)}
-                        className="p-1 rounded hover:bg-surface-3 text-secondary transition-colors"
+                        className="hover:bg-surface-3 rounded p-1 text-secondary transition-colors"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="h-4 w-4" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteMember(member.id)}
-                        className="p-1 rounded hover:bg-red-500/10 text-red-500 transition-colors"
+                        className="hover:bg-red-500/10 text-red-500 rounded p-1 transition-colors"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
@@ -317,15 +325,15 @@ export default function MemberDirectory() {
 
       {/* Add Member Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-background/50 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-surface-1 border border-subtle rounded-lg w-full max-w-md p-6 shadow-custom">
-            <h3 className="text-18 font-medium text-primary mb-4">Add New Directory Member</h3>
+        <div className="bg-background/50 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+          <div className="shadow-custom w-full max-w-md rounded-lg border border-subtle bg-surface-1 p-6">
+            <h3 className="mb-4 text-18 font-medium text-primary">Add New Directory Member</h3>
             <form onSubmit={handleAddSubmit} className="space-y-4">
               <div>
-                <label className="block text-12 font-medium text-tertiary mb-1">Email (Required)</label>
+                <label className="mb-1 block text-12 font-medium text-tertiary">Email (Required)</label>
                 <input
                   type="email"
-                  className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                  className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                   placeholder="member@example.com"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
@@ -334,20 +342,20 @@ export default function MemberDirectory() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-12 font-medium text-tertiary mb-1">First Name</label>
+                  <label className="mb-1 block text-12 font-medium text-tertiary">First Name</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                    className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                     placeholder="First Name"
                     value={newFirstName}
                     onChange={(e) => setNewFirstName(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="block text-12 font-medium text-tertiary mb-1">Last Name</label>
+                  <label className="mb-1 block text-12 font-medium text-tertiary">Last Name</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                    className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                     placeholder="Last Name"
                     value={newLastName}
                     onChange={(e) => setNewLastName(e.target.value)}
@@ -355,10 +363,10 @@ export default function MemberDirectory() {
                 </div>
               </div>
               <div>
-                <label className="block text-12 font-medium text-tertiary mb-1">Photo URL (Optional)</label>
+                <label className="mb-1 block text-12 font-medium text-tertiary">Photo URL (Optional)</label>
                 <input
                   type="url"
-                  className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                  className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                   placeholder="https://..."
                   value={newAvatar}
                   onChange={(e) => setNewAvatar(e.target.value)}
@@ -366,24 +374,26 @@ export default function MemberDirectory() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-12 font-medium text-tertiary mb-1">Custom Role Name</label>
+                  <label className="mb-1 block text-12 font-medium text-tertiary">Custom Role Name</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                    className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="block text-12 font-medium text-tertiary mb-1">Assigned Wing</label>
+                  <label className="mb-1 block text-12 font-medium text-tertiary">Assigned Wing</label>
                   <select
-                    className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                    className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                     value={newWing}
                     onChange={(e) => setNewWing(e.target.value)}
                   >
                     <option value="">No Wing</option>
                     {wings?.map((wing: any) => (
-                      <option key={wing.id} value={wing.id}>{wing.name}</option>
+                      <option key={wing.id} value={wing.id}>
+                        {wing.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -394,13 +404,13 @@ export default function MemberDirectory() {
                   id="newShowcase"
                   checked={newShowcase}
                   onChange={(e) => setNewShowcase(e.target.checked)}
-                  className="w-4 h-4 cursor-pointer accent-primary"
+                  className="accent-primary h-4 w-4 cursor-pointer"
                 />
-                <label htmlFor="newShowcase" className="text-13 text-secondary font-medium cursor-pointer">
+                <label htmlFor="newShowcase" className="cursor-pointer text-13 font-medium text-secondary">
                   Showcase directly on public website
                 </label>
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-subtle">
+              <div className="flex justify-end gap-3 border-t border-subtle pt-4">
                 <Button variant="secondary" onClick={() => setIsAddModalOpen(false)} disabled={loading}>
                   Cancel
                 </Button>
@@ -415,59 +425,61 @@ export default function MemberDirectory() {
 
       {/* Edit Member Modal */}
       {selectedMember && (
-        <div className="fixed inset-0 bg-background/50 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-surface-1 border border-subtle rounded-lg w-full max-w-md p-6 shadow-custom">
-            <h3 className="text-18 font-medium text-primary mb-4">Edit Directory Member</h3>
+        <div className="bg-background/50 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+          <div className="shadow-custom w-full max-w-md rounded-lg border border-subtle bg-surface-1 p-6">
+            <h3 className="mb-4 text-18 font-medium text-primary">Edit Directory Member</h3>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-12 font-medium text-tertiary mb-1">First Name</label>
+                  <label className="mb-1 block text-12 font-medium text-tertiary">First Name</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                    className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                     value={editFirstName}
                     onChange={(e) => setEditFirstName(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="block text-12 font-medium text-tertiary mb-1">Last Name</label>
+                  <label className="mb-1 block text-12 font-medium text-tertiary">Last Name</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                    className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                     value={editLastName}
                     onChange={(e) => setEditLastName(e.target.value)}
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-12 font-medium text-tertiary mb-1">Photo URL</label>
+                <label className="mb-1 block text-12 font-medium text-tertiary">Photo URL</label>
                 <input
                   type="url"
-                  className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                  className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                   value={editAvatar}
                   onChange={(e) => setEditAvatar(e.target.value)}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-12 font-medium text-tertiary mb-1">Custom Role Name</label>
+                  <label className="mb-1 block text-12 font-medium text-tertiary">Custom Role Name</label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                    className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                     value={editRole}
                     onChange={(e) => setEditRole(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="block text-12 font-medium text-tertiary mb-1">Assigned Wing</label>
+                  <label className="mb-1 block text-12 font-medium text-tertiary">Assigned Wing</label>
                   <select
-                    className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                    className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                     value={editWing}
                     onChange={(e) => setEditWing(e.target.value)}
                   >
                     <option value="">No Wing</option>
                     {wings?.map((wing: any) => (
-                      <option key={wing.id} value={wing.id}>{wing.name}</option>
+                      <option key={wing.id} value={wing.id}>
+                        {wing.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -478,13 +490,13 @@ export default function MemberDirectory() {
                   id="editShowcase"
                   checked={editShowcase}
                   onChange={(e) => setEditShowcase(e.target.checked)}
-                  className="w-4 h-4 cursor-pointer accent-primary"
+                  className="accent-primary h-4 w-4 cursor-pointer"
                 />
-                <label htmlFor="editShowcase" className="text-13 text-secondary font-medium cursor-pointer">
+                <label htmlFor="editShowcase" className="cursor-pointer text-13 font-medium text-secondary">
                   Showcase directly on public website
                 </label>
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-subtle">
+              <div className="flex justify-end gap-3 border-t border-subtle pt-4">
                 <Button variant="secondary" onClick={() => setSelectedMember(null)} disabled={loading}>
                   Cancel
                 </Button>

@@ -39,7 +39,7 @@ export function EditWingModal({ isOpen, onClose, onSuccess, wing }: Props) {
     try {
       const data: any = { description, color };
       if (wingMasterEmail) data.wing_master_email = wingMasterEmail;
-      
+
       await vjStartupsService.updateWing(wing.slug, data);
       onSuccess();
       onClose();
@@ -67,34 +67,36 @@ export function EditWingModal({ isOpen, onClose, onSuccess, wing }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-background/50 z-50 flex items-center justify-center backdrop-blur-sm">
-      <div className="bg-surface-1 border border-subtle rounded-lg w-full max-w-md p-6 shadow-custom">
-        <h3 className="text-18 font-medium text-primary mb-4">Edit {wing.name}</h3>
-        
-        {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded text-sm">{error}</div>}
+    <div className="bg-background/50 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+      <div className="shadow-custom w-full max-w-md rounded-lg border border-subtle bg-surface-1 p-6">
+        <h3 className="mb-4 text-18 font-medium text-primary">Edit {wing.name}</h3>
 
-        <form onSubmit={handleSubmit} className="space-y-4 border-b border-subtle pb-6 mb-6">
+        {error && (
+          <div className="bg-red-500/10 border-red-500/20 text-red-500 text-sm mb-4 rounded border p-3">{error}</div>
+        )}
+
+        <form onSubmit={handleSubmit} className="mb-6 space-y-4 border-b border-subtle pb-6">
           <div>
-            <label className="block text-12 font-medium text-tertiary mb-1">Description</label>
+            <label className="mb-1 block text-12 font-medium text-tertiary">Description</label>
             <textarea
-              className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+              className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
             />
           </div>
           <div>
-            <label className="block text-12 font-medium text-tertiary mb-1">Theme Color (Hex)</label>
+            <label className="mb-1 block text-12 font-medium text-tertiary">Theme Color (Hex)</label>
             <div className="flex gap-2">
               <input
                 type="color"
-                className="w-10 h-10 p-1 bg-surface-2 border border-subtle rounded cursor-pointer"
+                className="h-10 w-10 cursor-pointer rounded border border-subtle bg-surface-2 p-1"
                 value={color || "#000000"}
                 onChange={(e) => setColor(e.target.value)}
               />
               <input
                 type="text"
-                className="flex-1 px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                className="focus:border-primary flex-1 rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                 placeholder="#FF5733"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
@@ -102,17 +104,19 @@ export function EditWingModal({ isOpen, onClose, onSuccess, wing }: Props) {
             </div>
           </div>
           <div>
-            <label className="block text-12 font-medium text-tertiary mb-1">Wing Master (Email)</label>
+            <label className="mb-1 block text-12 font-medium text-tertiary">Wing Master (Email)</label>
             <input
               type="email"
-              className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+              className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
               placeholder="Assign a new wing master by email..."
               value={wingMasterEmail}
               onChange={(e) => setWingMasterEmail(e.target.value)}
             />
-            <p className="text-11 text-tertiary mt-1">Leave blank to keep current master. (Vision Wing Master gets Workspace Admin rights).</p>
+            <p className="mt-1 text-11 text-tertiary">
+              Leave blank to keep current master. (Vision Wing Master gets Workspace Admin rights).
+            </p>
           </div>
-          
+
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" onClick={onClose} disabled={loading}>
               Cancel
@@ -124,13 +128,13 @@ export function EditWingModal({ isOpen, onClose, onSuccess, wing }: Props) {
         </form>
 
         <div>
-          <h4 className="text-14 font-medium text-primary mb-3">Invite Members</h4>
+          <h4 className="mb-3 text-14 font-medium text-primary">Invite Members</h4>
           <form onSubmit={handleInviteSubmit} className="space-y-3">
             <div>
-              <label className="block text-12 font-medium text-tertiary mb-1">Emails (comma separated)</label>
+              <label className="mb-1 block text-12 font-medium text-tertiary">Emails (comma separated)</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                 placeholder="member1@example.com, member2@example.com"
                 value={inviteEmails}
                 onChange={(e) => setInviteEmails(e.target.value)}

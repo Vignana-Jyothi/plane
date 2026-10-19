@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
@@ -17,10 +17,11 @@ export default function WingDashboard() {
 
   // Fetch wing details, wing members, and the global directory members
   const { data: wings } = useSWR("VJ_WINGS_LIST", () => vjStartupsService.fetchWings());
-  const { data: members, isLoading, mutate: mutateMembers } = useSWR(
-    slug ? `VJ_WING_MEMBERS_${slug}` : null,
-    () => vjStartupsService.fetchWingMembers(slug)
-  );
+  const {
+    data: members,
+    isLoading,
+    mutate: mutateMembers,
+  } = useSWR(slug ? `VJ_WING_MEMBERS_${slug}` : null, () => vjStartupsService.fetchWingMembers(slug));
   const { data: directoryMembers } = useSWR("VJ_MEMBERS_LIST", () => vjStartupsService.fetchMembers());
 
   const [wing, setWing] = useState<any>(null);
@@ -89,7 +90,7 @@ export default function WingDashboard() {
     return (
       <PageWrapper header={{ title: "Wing Not Found", description: "" }}>
         <div className="text-sm text-tertiary">Could not find wing with slug: {slug}</div>
-        <Button variant="secondary" className="mt-4" onClick={() => navigate('/club-activities')}>
+        <Button variant="secondary" className="mt-4" onClick={() => navigate("/club-activities")}>
           Back to Directory
         </Button>
       </PageWrapper>
@@ -111,11 +112,14 @@ export default function WingDashboard() {
       header={{
         title: (
           <div className="flex items-center gap-3">
-            <Button variant="secondary" size="sm" className="!px-2" onClick={() => navigate('/club-activities')}>
-              <ArrowLeft className="w-4 h-4" />
+            <Button variant="secondary" size="sm" className="!px-2" onClick={() => navigate("/club-activities")}>
+              <ArrowLeft className="h-4 w-4" />
             </Button>
             {wing.color && (
-              <span className="w-4 h-4 rounded shadow-sm border border-subtle" style={{ backgroundColor: wing.color }} />
+              <span
+                className="shadow-sm h-4 w-4 rounded border border-subtle"
+                style={{ backgroundColor: wing.color }}
+              />
             )}
             <span>{wing.name}</span>
           </div>
@@ -128,49 +132,47 @@ export default function WingDashboard() {
         ),
       }}
     >
-      <div className="mt-6 border border-subtle rounded-lg bg-surface-1 overflow-hidden shadow-sm">
-        <div className="px-6 py-4 border-b border-subtle flex justify-between items-center bg-layer-1">
+      <div className="shadow-sm mt-6 overflow-hidden rounded-lg border border-subtle bg-surface-1">
+        <div className="flex items-center justify-between border-b border-subtle bg-layer-1 px-6 py-4">
           <h3 className="text-16 font-medium text-primary">Active Members</h3>
-          <span className="text-12 font-medium text-tertiary bg-surface-2 px-2 py-1 rounded">
+          <span className="rounded bg-surface-2 px-2 py-1 text-12 font-medium text-tertiary">
             {members?.length || 0} Total
           </span>
         </div>
-        
+
         {isLoading ? (
-          <div className="px-6 py-8 text-center text-tertiary text-13">Loading members...</div>
+          <div className="px-6 py-8 text-center text-13 text-tertiary">Loading members...</div>
         ) : (
           <table className="w-full text-left text-13">
-            <thead className="bg-layer-2 text-tertiary border-b border-subtle">
+            <thead className="border-b border-subtle bg-layer-2 text-tertiary">
               <tr>
                 <th className="px-6 py-3 font-medium">Name</th>
                 <th className="px-6 py-3 font-medium">Email</th>
                 <th className="px-6 py-3 font-medium">Role</th>
                 <th className="px-6 py-3 font-medium">Joined</th>
-                <th className="px-6 py-3 font-medium text-right">Actions</th>
+                <th className="px-6 py-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-subtle">
               {members?.map((member: any) => (
-                <tr key={member.id} className="hover:bg-layer-1 transition-colors">
+                <tr key={member.id} className="transition-colors hover:bg-layer-1">
                   <td className="px-6 py-4 font-medium text-primary">
                     {member.first_name || member.last_name ? `${member.first_name} ${member.last_name}` : "Unknown"}
                   </td>
                   <td className="px-6 py-4 text-tertiary">{member.email}</td>
                   <td className="px-6 py-4">
                     {member.role === "Wing Master" ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-11 font-medium bg-orange-500/10 text-orange-600 border border-orange-500/20">
-                        <Crown className="w-3 h-3" />
+                      <span className="bg-orange-500/10 text-orange-600 border-orange-500/20 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-11 font-medium">
+                        <Crown className="h-3 w-3" />
                         Wing Master
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-11 font-medium bg-surface-2 text-tertiary border border-subtle">
+                      <span className="inline-flex items-center rounded-full border border-subtle bg-surface-2 px-2.5 py-1 text-11 font-medium text-tertiary">
                         Member
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-tertiary">
-                    {new Date(member.joined_at).toLocaleDateString()}
-                  </td>
+                  <td className="px-6 py-4 text-tertiary">{new Date(member.joined_at).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-right">
                     <Button variant="error-fill" size="sm" onClick={() => handleRemoveMember(member.id)}>
                       Remove
@@ -181,8 +183,8 @@ export default function WingDashboard() {
               {members?.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center">
-                    <p className="text-tertiary font-medium mb-1">No active members yet.</p>
-                    <p className="text-tertiary text-12">Click + Add Members to add people from the directory.</p>
+                    <p className="mb-1 font-medium text-tertiary">No active members yet.</p>
+                    <p className="text-12 text-tertiary">Click + Add Members to add people from the directory.</p>
                   </td>
                 </tr>
               )}
@@ -192,18 +194,22 @@ export default function WingDashboard() {
       </div>
 
       {inviteModalOpen && (
-        <div className="fixed inset-0 bg-background/50 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-surface-1 border border-subtle rounded-lg w-full max-w-md p-6 shadow-custom flex flex-col max-h-[90vh]">
-            <h3 className="text-18 font-medium text-primary mb-4">Manage Wing Members</h3>
-            {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded text-sm">{error}</div>}
-            
+        <div className="bg-background/50 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+          <div className="shadow-custom flex max-h-[90vh] w-full max-w-md flex-col rounded-lg border border-subtle bg-surface-1 p-6">
+            <h3 className="mb-4 text-18 font-medium text-primary">Manage Wing Members</h3>
+            {error && (
+              <div className="bg-red-500/10 border-red-500/20 text-red-500 text-sm mb-4 rounded border p-3">
+                {error}
+              </div>
+            )}
+
             {/* Search inputs and Directory add/remove list */}
-            <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+            <div className="flex-1 space-y-4 overflow-y-auto pr-1">
               <div>
-                <label className="block text-12 font-medium text-tertiary mb-1">Search Directory (Name or Email)</label>
+                <label className="mb-1 block text-12 font-medium text-tertiary">Search Directory (Name or Email)</label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                  className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                   placeholder="Start typing a name or email to add/remove..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -211,21 +217,28 @@ export default function WingDashboard() {
               </div>
 
               {searchQuery.trim() && (
-                <div className="border border-subtle rounded divide-y divide-subtle max-h-[200px] overflow-y-auto bg-surface-2">
+                <div className="max-h-[200px] divide-y divide-subtle overflow-y-auto rounded border border-subtle bg-surface-2">
                   {filteredDirectory.map((m: any) => {
                     const inWing = members?.some((wm: any) => wm.email === m.user?.email);
-                    const name = `${m.user?.first_name || ""} ${m.user?.last_name || ""}`.trim() || m.user?.username || m.user?.email || "Unknown Member";
+                    const name =
+                      `${m.user?.first_name || ""} ${m.user?.last_name || ""}`.trim() ||
+                      m.user?.username ||
+                      m.user?.email ||
+                      "Unknown Member";
                     return (
-                      <div key={m.id} className="p-2.5 flex items-center justify-between hover:bg-surface-3 transition-colors text-12">
+                      <div
+                        key={m.id}
+                        className="hover:bg-surface-3 flex items-center justify-between p-2.5 text-12 transition-colors"
+                      >
                         <div>
                           <div className="font-semibold text-primary">{name}</div>
-                          <div className="text-tertiary text-11">{m.user?.email}</div>
+                          <div className="text-11 text-tertiary">{m.user?.email}</div>
                         </div>
                         {inWing ? (
                           <button
                             type="button"
                             onClick={() => handleRemoveMember(m.user?.id)}
-                            className="px-2.5 py-1 rounded bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 text-11 font-medium transition-colors"
+                            className="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20 rounded border px-2.5 py-1 text-11 font-medium transition-colors"
                           >
                             Remove
                           </button>
@@ -233,7 +246,7 @@ export default function WingDashboard() {
                           <button
                             type="button"
                             onClick={() => handleAddExistingMember(m.user?.email)}
-                            className="px-2.5 py-1 rounded bg-green-500/10 text-green-600 border border-green-500/20 hover:bg-green-500/20 text-11 font-medium transition-colors"
+                            className="bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20 rounded border px-2.5 py-1 text-11 font-medium transition-colors"
                           >
                             Add
                           </button>
@@ -242,31 +255,34 @@ export default function WingDashboard() {
                     );
                   })}
                   {filteredDirectory.length === 0 && (
-                    <div className="p-3 text-center text-tertiary text-12">
-                      No directory members match.
-                    </div>
+                    <div className="p-3 text-center text-12 text-tertiary">No directory members match.</div>
                   )}
                 </div>
               )}
 
               {/* Standard Invite Fallback */}
-              <form onSubmit={handleInviteSubmit} className="pt-4 border-t border-subtle space-y-4">
+              <form onSubmit={handleInviteSubmit} className="space-y-4 border-t border-subtle pt-4">
                 <div>
-                  <label className="block text-12 font-medium text-tertiary mb-1">Invite New Emails (Comma-separated)</label>
+                  <label className="mb-1 block text-12 font-medium text-tertiary">
+                    Invite New Emails (Comma-separated)
+                  </label>
                   <input
                     type="text"
-                    className="w-full px-3 py-2 border border-subtle rounded text-13 bg-surface-2 outline-none focus:border-primary"
+                    className="focus:border-primary w-full rounded border border-subtle bg-surface-2 px-3 py-2 text-13 outline-none"
                     placeholder="email1@example.com, email2@example.com"
                     value={inviteEmails}
                     onChange={(e) => setInviteEmails(e.target.value)}
                   />
                 </div>
                 <div className="flex justify-end gap-3 pt-2">
-                  <Button variant="secondary" onClick={() => {
-                    setInviteModalOpen(false);
-                    setSearchQuery("");
-                    setInviteEmails("");
-                  }}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setInviteModalOpen(false);
+                      setSearchQuery("");
+                      setInviteEmails("");
+                    }}
+                  >
                     Close
                   </Button>
                   <Button variant="primary" type="submit" disabled={inviteLoading || !inviteEmails.trim()}>

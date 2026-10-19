@@ -25,7 +25,7 @@ export function CreateStartupModal({ isOpen, onClose, onSuccess }: CreateStartup
 
     try {
       const service = new VJStartupsService();
-      
+
       const emailsList = invitedEmails
         .split(",")
         .map((email) => email.trim())
@@ -36,11 +36,11 @@ export function CreateStartupModal({ isOpen, onClose, onSuccess }: CreateStartup
         description,
         invited_emails: emailsList,
       });
-      
+
       setIsSubmitting(false);
       onClose();
       if (onSuccess) onSuccess();
-      
+
       setToast({
         type: TOAST_TYPE.SUCCESS,
         title: "Success",
@@ -83,16 +83,16 @@ export function CreateStartupModal({ isOpen, onClose, onSuccess }: CreateStartup
               leaveFrom="opacity-100 translate-y-0 sm:scale-100"
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
-              <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-surface-1 text-left shadow-raised-200 transition-all sm:my-8 sm:w-full sm:max-w-md border border-subtle">
+              <Dialog.Panel className="relative transform overflow-hidden rounded-lg border border-subtle bg-surface-1 text-left shadow-raised-200 transition-all sm:my-8 sm:w-full sm:max-w-md">
                 <div className="px-6 pt-5 pb-4">
-                  <Dialog.Title as="h3" className="text-16 font-medium text-primary mb-1">
+                  <Dialog.Title as="h3" className="mb-1 text-16 font-medium text-primary">
                     Create New Startup
                   </Dialog.Title>
                 </div>
-                
-                <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-5">
-                  {error && <div className="p-3 text-13 text-red-500 bg-red-500/10 rounded">{error}</div>}
-                  
+
+                <form onSubmit={handleSubmit} className="space-y-5 px-6 pb-6">
+                  {error && <div className="text-red-500 bg-red-500/10 rounded p-3 text-13">{error}</div>}
+
                   <div className="space-y-1">
                     <label className="text-13 text-tertiary">Startup Name *</label>
                     <Input
@@ -115,7 +115,7 @@ export function CreateStartupModal({ isOpen, onClose, onSuccess }: CreateStartup
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Brief description of the startup..."
-                      className="w-full min-h-[80px]"
+                      className="min-h-[80px] w-full"
                     />
                   </div>
 
@@ -130,9 +130,7 @@ export function CreateStartupModal({ isOpen, onClose, onSuccess }: CreateStartup
                       placeholder="founder1@acme.com, founder2@acme.com"
                       className="w-full"
                     />
-                    <p className="text-11 text-placeholder mt-1">
-                      Comma-separated list of emails for auto-onboarding.
-                    </p>
+                    <p className="mt-1 text-11 text-placeholder">Comma-separated list of emails for auto-onboarding.</p>
                   </div>
 
                   <div className="mt-6 flex items-center justify-end gap-2 pt-2">

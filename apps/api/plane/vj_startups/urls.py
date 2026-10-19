@@ -9,6 +9,7 @@ from .views import (
     ShowcaseMetricsEndpoint,
     ShowcaseMembersEndpoint
 )
+from .views.profiles import HandleAvailabilityEndpoint, MyProfileEndpoint, PublicProfileEndpoint
 from .views.admin import (
     AdminStartupEndpoint,
     AdminStartupsMetricsEndpoint,
@@ -99,8 +100,13 @@ urlpatterns = [
     path("public/team/", PublicTeamEndpoint.as_view(), name="public-team"),
 
     # Public Profiles
+    path("public/profiles/<str:handle>/", PublicProfileEndpoint.as_view(), name="public-profile"),
     path("public/members/<str:slug>/", PublicMemberProfileEndpoint.as_view(), name="public-member-profile"),
     path("public/startups/<str:slug>/", PublicStartupProfileEndpoint.as_view(), name="public-startup-profile"),
+
+    # A signed-in member's own public-profile settings
+    path("profile/me/", MyProfileEndpoint.as_view(), name="my-profile"),
+    path("profile/handle-available/", HandleAvailabilityEndpoint.as_view(), name="profile-handle-available"),
 
     # Showcase
     path("showcase/startups/", ShowcaseStartupsEndpoint.as_view(), name="showcase-startups"),

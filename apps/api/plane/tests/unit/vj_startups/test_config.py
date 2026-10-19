@@ -16,8 +16,27 @@ def clean_env(monkeypatch):
         "VJ_MICROSERVICE_URL",
         "NEXT_PUBLIC_MICROSERVICE_URL",
         "VJ_WORKSPACE_ADMIN_WINGS",
+        "VJ_WORKSPACE_SLUG",
+        "VJ_WORKSPACE_NAME",
     ):
         monkeypatch.delenv(name, raising=False)
+
+
+@pytest.mark.unit
+class TestWorkspaceIdentity:
+    def test_defaults_match_the_original_hard_coded_values(self):
+        assert config.workspace_slug() == "vj-startups"
+        assert config.workspace_name() == "VJ Startups"
+
+    def test_slug_and_name_come_from_the_environment(self, monkeypatch):
+        monkeypatch.setenv("VJ_WORKSPACE_SLUG", "  VJ-Startup ")
+        monkeypatch.setenv("VJ_WORKSPACE_NAME", "VJ Startup")
+        assert config.workspace_slug() == "vj-startup"
+        assert config.workspace_name() == "VJ Startup"
+
+    def test_a_blank_setting_falls_back_to_the_default(self, monkeypatch):
+        monkeypatch.setenv("VJ_WORKSPACE_SLUG", "  ")
+        assert config.workspace_slug() == "vj-startups"
 
 
 @pytest.mark.unit

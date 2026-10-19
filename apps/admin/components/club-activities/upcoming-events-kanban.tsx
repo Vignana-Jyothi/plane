@@ -15,55 +15,55 @@ export function UpcomingEventsKanban() {
   const columns = [
     {
       title: "Upcoming",
-      icon: <Calendar className="w-4 h-4 text-primary" />,
-      events: upcomingEvents
+      icon: <Calendar className="h-4 w-4 text-primary" />,
+      events: upcomingEvents,
     },
     {
       title: "In Progress",
-      icon: <Clock className="w-4 h-4 text-orange-500" />,
-      events: inProgressEvents
+      icon: <Clock className="text-orange-500 h-4 w-4" />,
+      events: inProgressEvents,
     },
     {
       title: "Completed",
-      icon: <CheckCircle2 className="w-4 h-4 text-green-500" />,
-      events: completedEvents
-    }
+      icon: <CheckCircle2 className="text-green-500 h-4 w-4" />,
+      events: completedEvents,
+    },
   ];
 
   return (
-    <div className="w-full flex flex-col md:flex-row gap-4 p-4 overflow-x-auto min-h-[400px]">
+    <div className="flex min-h-[400px] w-full flex-col gap-4 overflow-x-auto p-4 md:flex-row">
       {columns.map((col, i) => (
-        <div key={i} className="flex-1 min-w-[280px] bg-surface-2 rounded-lg border border-subtle p-3 flex flex-col">
-          <div className="flex items-center gap-2 mb-4 px-2 pt-1">
+        <div key={i} className="flex min-w-[280px] flex-1 flex-col rounded-lg border border-subtle bg-surface-2 p-3">
+          <div className="mb-4 flex items-center gap-2 px-2 pt-1">
             {col.icon}
             <h4 className="text-14 font-medium text-primary">{col.title}</h4>
-            <span className="ml-auto text-12 font-medium bg-surface-1 px-2 py-0.5 rounded text-tertiary">
+            <span className="ml-auto rounded bg-surface-1 px-2 py-0.5 text-12 font-medium text-tertiary">
               {col.events.length}
             </span>
           </div>
-          
-          <div className="flex flex-col gap-3 flex-1">
+
+          <div className="flex flex-1 flex-col gap-3">
             {col.events.map((event: any) => (
-              <div 
+              <div
                 key={event.id}
-                className="bg-surface-1 border border-subtle rounded-lg p-3 hover:border-primary/50 transition-colors cursor-pointer shadow-sm group"
+                className="hover:border-primary/50 shadow-sm group cursor-pointer rounded-lg border border-subtle bg-surface-1 p-3 transition-colors"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: event.wing_color || "#94a3b8" }} />
-                  <span className="text-11 font-medium text-tertiary uppercase tracking-wider">{event.wing_name || "General"}</span>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: event.wing_color || "#94a3b8" }} />
+                  <span className="tracking-wider text-11 font-medium text-tertiary uppercase">
+                    {event.wing_name || "General"}
+                  </span>
                 </div>
-                <h5 className="text-14 font-medium text-primary group-hover:text-primary mb-3">
-                  {event.title}
-                </h5>
+                <h5 className="mb-3 text-14 font-medium text-primary group-hover:text-primary">{event.title}</h5>
                 <div className="flex items-center gap-2 text-12 text-tertiary">
-                  <Calendar className="w-3 h-3" />
+                  <Calendar className="h-3 w-3" />
                   {new Date(event.scheduled_at).toLocaleDateString()}
                 </div>
               </div>
             ))}
-            
+
             {col.events.length === 0 && (
-              <div className="flex-1 flex items-center justify-center border-2 border-dashed border-subtle rounded-lg text-tertiary text-12 min-h-[120px]">
+              <div className="flex min-h-[120px] flex-1 items-center justify-center rounded-lg border-2 border-dashed border-subtle text-12 text-tertiary">
                 No events
               </div>
             )}
