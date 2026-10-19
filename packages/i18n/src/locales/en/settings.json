@@ -98,6 +98,7 @@
     },
     "actions": {
       "profile": "Profile",
+      "public-profile": "Public profile",
       "security": "Security",
       "activity": "Activity",
       "preferences": "Preferences",
