@@ -12,7 +12,10 @@ name: Data operations (manual)
 # instance-admin (let an existing account open Plane's /god-mode/ panel) and
 # workspace-member (give an existing account a role in a workspace) and
 # remove-unused-masters (one-off: delete the never-used placeholder accounts of the Ignition and
-# Fuel wing masters so they can sign up with their own password).
+# Fuel wing masters so they can sign up with their own password) and
+# reset-admin-password (set a new password for an Instance Admin who cannot sign in and cannot
+# get a reset email because the instance has no SMTP; the password comes from the
+# ADMIN_NEW_PASSWORD repository secret, never from an input or the log).
 #
 # This repository is PUBLIC, so run logs are public. Every email address in the
 # output is masked and per-person lines are suppressed - only counts and
@@ -34,6 +37,7 @@ on:
           - workspace-member
           - remove-unused-masters
           - prune-workspace-members
+          - reset-admin-password
       apply:
         description: Write to the database (leave unticked for a dry run that writes nothing)
         type: boolean
@@ -61,7 +65,7 @@ on:
         type: boolean
         default: false
       email:
-        description: "instance-admin and workspace-member: the email of an account that has already signed in to Plane once"
+        description: "instance-admin and workspace-member: the email of an account that has already signed in to Plane once; reset-admin-password: the Instance Admin whose password to reset"
         type: string
         required: false
       legacy_url:
@@ -234,6 +238,48 @@ jobs:
           if [ "$APPLY" = "true" ]; then
             # Refuses (with a clear message) if the account is missing or already an admin.
             run_quiet '.' docker exec api python manage.py create_instance_admin "$email"
+          fi
+
+      # For an Instance Admin who has forgotten their password when the instance has no SMTP, so the
+      # "forgot password" email cannot be sent. The new password is the ADMIN_NEW_PASSWORD repository
+      # secret: it is never an input, never on a command line and never printed (this repository's
+      # logs are public). The command only acts on an existing, active Instance Admin or superuser,
+      # so this cannot be used on an ordinary member. A dry run checks the account and that the
+      # secret is an acceptable password, and writes nothing. After a real run, delete the secret and
+      # change the password again from Plane's own Security settings.
+      - name: Reset an Instance Admin's password
+        if: inputs.part == 'reset-admin-password'
+        env:
+          ADMIN_EMAIL: ${{ inputs.email }}
+          VJ_NEW_PASSWORD: ${{ secrets.ADMIN_NEW_PASSWORD }}
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/helpers.sh"
+
+          email=$(printf '%s' "$ADMIN_EMAIL" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+          if ! printf '%s' "$email" | grep -Eq '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'; then
+            echo "::error::Fill in the 'email' input with a valid email address."
+            exit 1
+          fi
+          if [ -z "${VJ_NEW_PASSWORD:-}" ]; then
+            echo "::error::The ADMIN_NEW_PASSWORD repository secret is not set."
+            exit 1
+          fi
+          docker inspect api > /dev/null || { echo "::error::No container named 'api' is running."; exit 1; }
+          docker exec api test -f plane/vj_startups/management/commands/set_instance_admin_password.py \
+            || { echo "::error::set_instance_admin_password is not in the running API image yet - wait for the Plane deploy to finish."; exit 1; }
+
+          flags=""
+          if [ "$APPLY" != "true" ]; then flags="--dry-run"; fi
+          echo "Mode: $([ "$APPLY" = "true" ] && echo APPLY || echo 'dry run - nothing is written')"
+          # "-e VJ_NEW_PASSWORD" with no value copies it from this step's environment, so the
+          # password is not on the docker command line. The command prints only fixed messages.
+          run_quiet '^(Dry run|Password updated)' \
+            docker exec -e VJ_NEW_PASSWORD api python manage.py set_instance_admin_password \
+              --email "$email" $flags
+
+          if [ "$APPLY" = "true" ]; then
+            echo "Done. Sign in with the new password, then DELETE the ADMIN_NEW_PASSWORD secret and change the password from Plane's Security settings."
           fi
 
       # Removes every non-Admin member from a workspace (default: vj-startups), the way Plane's own
