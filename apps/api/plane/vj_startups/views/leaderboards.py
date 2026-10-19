@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
 from plane.vj_startups.models.organization import OrganizationMemberProfile, Wing
@@ -9,10 +10,11 @@ class MemberLeaderboardEndpoint(generics.ListAPIView):
     permission_classes = [AllowAny] # Publicly accessible for now, could be feature flagged
 
     def get_queryset(self):
-        # Only members who published their profile (see views/profiles.py); everyone else stays off
-        # a public list, however high their score.
+        # Members who published their profile (see views/profiles.py), plus the club members the
+        # site already lists publicly on its team page. Everyone else stays off a public list,
+        # however high their score.
         return (
-            OrganizationMemberProfile.objects.filter(profile_visibility="public")
+            OrganizationMemberProfile.objects.filter(Q(profile_visibility="public") | Q(is_club_member=True))
             .select_related("user", "wing")
             .order_by("-reputation_score")[:100]
         )
