@@ -10,6 +10,9 @@ import { ExternalLink } from "lucide-react";
 
 const vjStartupsService = new VJStartupsService();
 
+// Baked in at build time (only VITE_ vars are exposed, see vite.config.ts); never fall back to localhost.
+const PUBLIC_SITE_URL = (process.env.VITE_VJ_PUBLIC_SITE_URL || "https://www.vjstartup.com").replace(/\/$/, "");
+
 const STAGE_LABELS: Record<number, string> = {
   1: "Idea", 2: "Research", 3: "Prototype", 4: "MVP",
   5: "Beta", 6: "Launch", 7: "Growth", 8: "Scale", 9: "Mature"
@@ -34,6 +37,17 @@ export default function VJStartupsDashboard() {
     } catch (err) {
       console.error(err);
       alert("Failed to disable startup.");
+    }
+  };
+
+  const handleEnable = async (slug: string) => {
+    try {
+      await vjStartupsService.updateStartup(slug, { status: "active" });
+      mutateStartups();
+      mutateMetrics();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to enable startup.");
     }
   };
 
@@ -157,12 +171,17 @@ export default function VJStartupsDashboard() {
                           </Button>
                         </>
                       ) : (
-                        <Button variant="error-fill" size="sm" onClick={() => handleDelete(startup.slug)}>
-                          Delete
-                        </Button>
+                        <>
+                          <Button variant="secondary" size="sm" onClick={() => handleEnable(startup.slug)}>
+                            Enable
+                          </Button>
+                          <Button variant="error-fill" size="sm" onClick={() => handleDelete(startup.slug)}>
+                            Delete
+                          </Button>
+                        </>
                       )}
                       <a
-                        href={`${process.env.NEXT_PUBLIC_MAIN_SITE_URL || "http://localhost:4000"}/startups/${startup.id}`}
+                        href={`${PUBLIC_SITE_URL}/startups/${startup.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1.5 text-tertiary hover:text-primary transition-colors border border-subtle rounded hover:bg-surface-2"

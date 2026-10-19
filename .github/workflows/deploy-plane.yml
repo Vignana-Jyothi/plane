@@ -42,6 +42,7 @@ jobs:
           VITE_SPACE_BASE_URL="${DOMAIN}"
           VITE_LIVE_BASE_URL="${DOMAIN}"
           VITE_ENABLE_VJ_STARTUPS=1
+          VITE_VJ_PUBLIC_SITE_URL="${VJ_PUBLIC_SITE_URL:-https://www.vjstartup.com}"
           EOF
           
           # Fix Admin ENV
