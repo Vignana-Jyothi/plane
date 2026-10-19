@@ -41,7 +41,9 @@ def validate_handle(raw):
     if len(handle) > HANDLE_MAX_LENGTH:
         raise HandleError(f"Handle must be at most {HANDLE_MAX_LENGTH} characters.")
     if not HANDLE_PATTERN.match(handle):
-        raise HandleError("Use only lower-case letters, numbers and single hyphens, starting and ending with a letter or number.")
+        raise HandleError(
+            "Use only lower-case letters, numbers and single hyphens, starting and ending with a letter or number."
+        )
     if "--" in handle:
         raise HandleError("Handle cannot contain two hyphens in a row.")
     if handle in RESERVED_HANDLES:

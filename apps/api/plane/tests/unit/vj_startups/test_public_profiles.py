@@ -19,7 +19,9 @@ class TestHandles:
     def test_valid_handle_is_lower_cased_and_trimmed(self):
         assert handles.validate_handle("  Tanush-P ") == "tanush-p"
 
-    @pytest.mark.parametrize("bad", ["", "ab", "a" * 31, "-abc", "abc-", "a--b", "has space", "under_score", "dot.name"])
+    @pytest.mark.parametrize(
+        "bad", ["", "ab", "a" * 31, "-abc", "abc-", "a--b", "has space", "under_score", "dot.name"]
+    )
     def test_malformed_handles_are_rejected(self, bad):
         with pytest.raises(handles.HandleError):
             handles.validate_handle(bad)
@@ -160,7 +162,15 @@ class TestProfileEdit:
                 "portfolio_url": 12,
             }
         )
-        assert set(errors) == {"handle", "profile_visibility", "bio", "skills", "github_url", "linkedin_url", "portfolio_url"}
+        assert set(errors) == {
+            "handle",
+            "profile_visibility",
+            "bio",
+            "skills",
+            "github_url",
+            "linkedin_url",
+            "portfolio_url",
+        }
 
     def test_lookalike_hosts_do_not_pass_the_github_check(self):
         _, errors = clean_profile_update({"github_url": "https://notgithub.com/asha"})
