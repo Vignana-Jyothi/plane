@@ -260,7 +260,13 @@ export const PublicProfileSettings = observer(function PublicProfileSettings() {
         </div>
 
         <div>
-          <Button variant="primary" size="lg" onClick={handleSave} loading={isSaving} disabled={isSaving || handleBlocked}>
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={handleSave}
+            loading={isSaving}
+            disabled={isSaving || handleBlocked}
+          >
             {isSaving ? "Saving…" : "Save changes"}
           </Button>
         </div>
