@@ -1,3 +1,5 @@
+import logging
+
 import requests
 from django.db import transaction
 from django.contrib.auth import get_user_model
@@ -22,14 +24,18 @@ from plane.vj_startups.config import (
     is_institutional_email,
     microservice_base_url,
     public_site_url,
+    workspace_name,
     workspace_role_for_wing,
+    workspace_slug,
 )
 
 User = get_user_model()
+logger = logging.getLogger("plane.api")
 
 class OnboardingService:
-    WORKSPACE_NAME = "VJ Startups"
-    WORKSPACE_SLUG = "vj-startups"
+    # Read once at import; set VJ_WORKSPACE_SLUG / VJ_WORKSPACE_NAME to match the real workspace.
+    WORKSPACE_NAME = workspace_name()
+    WORKSPACE_SLUG = workspace_slug()
     COMMON_PROJECT_NAME = "General"
 
     @classmethod
@@ -47,6 +53,12 @@ class OnboardingService:
                 "owner": owner
             }
         )
+        if created:
+            logger.warning(
+                "Created workspace '%s' because none existed with that slug. If startups were meant to "
+                "go into an existing workspace, set VJ_WORKSPACE_SLUG to its slug.",
+                cls.WORKSPACE_SLUG,
+            )
         if created and owner:
             WorkspaceMember.objects.get_or_create(
                 workspace=workspace,

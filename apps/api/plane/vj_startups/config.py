@@ -16,6 +16,12 @@ from rest_framework.exceptions import APIException
 # set VJ_PUBLIC_SITE_URL to change it (e.g. once the bare domain has DNS).
 DEFAULT_PUBLIC_SITE_URL = "https://www.vjstartup.com"
 
+# The one Plane workspace every startup, wing and member lives in. Set VJ_WORKSPACE_SLUG to the
+# slug of the workspace you already use; otherwise a second, empty workspace with the default
+# slug is created the first time a startup is provisioned.
+DEFAULT_WORKSPACE_SLUG = "vj-startups"
+DEFAULT_WORKSPACE_NAME = "VJ Startups"
+
 # Email domain(s) whose owners are auto-onboarded into the global workspace.
 DEFAULT_INSTITUTIONAL_EMAIL_DOMAINS = "vnrvjiet.in"
 
@@ -41,6 +47,16 @@ class MicroserviceNotConfigured(APIException):
 def public_site_url():
     """Base URL of the public site, without a trailing slash."""
     return (os.environ.get("VJ_PUBLIC_SITE_URL") or DEFAULT_PUBLIC_SITE_URL).strip().rstrip("/")
+
+
+def workspace_slug():
+    """Slug of the global VJ Startups workspace (VJ_WORKSPACE_SLUG, default 'vj-startups')."""
+    return (os.environ.get("VJ_WORKSPACE_SLUG") or DEFAULT_WORKSPACE_SLUG).strip().lower()
+
+
+def workspace_name():
+    """Display name used only if the workspace has to be created (VJ_WORKSPACE_NAME)."""
+    return (os.environ.get("VJ_WORKSPACE_NAME") or DEFAULT_WORKSPACE_NAME).strip()
 
 
 def institutional_email_domains():
