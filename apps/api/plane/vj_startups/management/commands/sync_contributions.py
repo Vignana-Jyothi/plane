@@ -6,13 +6,14 @@ from django.db.models.functions import TruncDate
 from plane.db.models import Project, Issue, WorkspaceMember
 from plane.vj_startups.models.contribution_snapshot import ContributionSnapshot
 from plane.vj_startups.models.organization import OrganizationMemberProfile
+from plane.vj_startups.services.onboarding_service import OnboardingService
 
 class Command(BaseCommand):
     help = "Syncs member contribution snapshots and calculates reputation points from Plane issues."
 
     def handle(self, *args, **options):
         # We target the global VJ Startups workspace
-        workspace_slug = "vj-startups"
+        workspace_slug = OnboardingService.WORKSPACE_SLUG
         members = WorkspaceMember.objects.filter(
             workspace__slug=workspace_slug,
             member__is_bot=False,

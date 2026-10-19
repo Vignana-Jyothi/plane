@@ -108,6 +108,9 @@ jobs:
           if [ -n "${VJ_INSTITUTIONAL_EMAIL_DOMAINS}" ]; then
             echo "VJ_INSTITUTIONAL_EMAIL_DOMAINS=\"${VJ_INSTITUTIONAL_EMAIL_DOMAINS}\"" >> apps/api/.env
           fi
+          if [ -n "${VJ_WORKSPACE_SLUG}" ]; then
+            echo "VJ_WORKSPACE_SLUG=\"${VJ_WORKSPACE_SLUG}\"" >> apps/api/.env
+          fi
           # apps/live also needs this same value to authenticate with the
           # api service - apps/live/.env was only just created fresh from
           # its own .env.example above (still holding that file's literal
@@ -190,6 +193,7 @@ jobs:
           PLANE_DOMAIN: ${{ vars.PLANE_DOMAIN }}
           VJ_PUBLIC_SITE_URL: ${{ vars.VJ_PUBLIC_SITE_URL }}
           VJ_INSTITUTIONAL_EMAIL_DOMAINS: ${{ vars.VJ_INSTITUTIONAL_EMAIL_DOMAINS }}
+          VJ_WORKSPACE_SLUG: ${{ vars.VJ_WORKSPACE_SLUG }}
 
       - name: Align the running database and message broker with the password secrets
         env:
